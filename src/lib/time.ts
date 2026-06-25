@@ -10,19 +10,22 @@ export function formatClock(ts: number): string {
 }
 
 export function formatDuration(ms: number): string {
-  if (ms < MIN) return `${Math.round(ms / 1000)}s`
-  if (ms < HOUR) return `${Math.round(ms / MIN)} min`
-  const h = Math.floor(ms / HOUR)
-  const m = Math.round((ms % HOUR) / MIN)
+  const totalSec = Math.round(ms / 1000)
+  if (totalSec < 60) return `${totalSec}s`
+  const totalMin = Math.round(ms / MIN)
+  if (totalMin < 60) return `${totalMin} min`
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
   return `${h}h ${pad(m)}m`
 }
 
 export function formatAgo(fromTs: number, now: number): string {
   const ms = now - fromTs
   if (ms < MIN) return 'just now'
-  if (ms < HOUR) return `${Math.round(ms / MIN)}m ago`
-  const h = Math.floor(ms / HOUR)
-  const m = Math.round((ms % HOUR) / MIN)
+  const totalMin = Math.round(ms / MIN)
+  if (totalMin < 60) return `${totalMin}m ago`
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
   return `${h}h ${pad(m)}m ago`
 }
 

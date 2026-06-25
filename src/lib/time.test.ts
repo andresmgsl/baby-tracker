@@ -17,6 +17,11 @@ describe('formatDuration', () => {
     expect(formatDuration(72 * 60_000)).toBe('1h 12m')
     expect(formatDuration(0)).toBe('0s')
   })
+
+  it('carries rounded minutes into the hour instead of emitting 60m', () => {
+    expect(formatDuration(7_180_000)).toBe('2h 00m') // 1h 59m 40s rounds up
+    expect(formatDuration(59_700 * 60)).toBe('1h 00m') // 59.7 min rounds up
+  })
 })
 
 describe('formatAgo', () => {
@@ -25,6 +30,11 @@ describe('formatAgo', () => {
     expect(formatAgo(now - 30_000, now)).toBe('just now')
     expect(formatAgo(now - 135 * 60_000, now)).toBe('2h 15m ago')
     expect(formatAgo(now - 5 * 60_000, now)).toBe('5m ago')
+  })
+
+  it('carries rounded minutes into the hour', () => {
+    const now = 10_000_000
+    expect(formatAgo(now - 7_180_000, now)).toBe('2h 00m ago')
   })
 })
 

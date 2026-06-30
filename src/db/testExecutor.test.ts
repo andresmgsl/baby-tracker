@@ -29,4 +29,17 @@ describe('makeTestExecutor', () => {
     expect(rows).toHaveLength(0)
     await db.close()
   })
+
+  it('rejects nested transactions with a clear error', async () => {
+    const db = await makeTestExecutor()
+    await expect(
+      db.transaction(async (tx) => {
+        await tx.transaction(async () => {})
+      }),
+    ).rejects.toThrow('nested transactions not supported')
+    // connection still usable after the rolled-back outer transaction
+    await db.exec('INSERT INTO settings (key, value) VALUES (?, ?)', ['ok', '1'])
+    expect((await db.exec('SELECT value FROM settings WHERE key = ?', ['ok']))[0].value).toBe('1')
+    await db.close()
+  })
 })

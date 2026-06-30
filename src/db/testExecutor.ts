@@ -14,7 +14,12 @@ function wrap(db: Database.Database): SqlExecutor {
     async transaction(fn) {
       db.exec('BEGIN')
       try {
-        const result = await fn(wrap(db))
+        const result = await fn({
+          ...wrap(db),
+          async transaction() {
+            throw new Error('nested transactions not supported')
+          },
+        })
         db.exec('COMMIT')
         return result
       } catch (err) {

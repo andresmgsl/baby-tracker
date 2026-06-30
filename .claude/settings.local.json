@@ -15,7 +15,19 @@
       "Read(//opt/homebrew/bin/**)",
       "Bash(/opt/homebrew/bin/brew install *)",
       "Bash(/opt/homebrew/bin/node --version)",
-      "Bash(/opt/homebrew/bin/npm --version)"
+      "Bash(/opt/homebrew/bin/npm --version)",
+      "Bash(/opt/homebrew/bin/npx vitest *)",
+      "Bash(npx vitest *)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(lsof -ti:5173)",
+      "Bash(xargs kill)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc exit: $?\")"
     ]
   }
 }

@@ -12,14 +12,22 @@ const DB_NAME = 'baby-tracker.sqlite3'
 let sqlite3: any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let initPromise: Promise<any> | undefined
 
 async function ready() {
   if (db) return db
-  if (!sqlite3) sqlite3 = await sqlite3InitModule()
-  // OPFS persistent VFS; requires running inside a Worker.
-  db = new sqlite3.oo1.OpfsDb(DB_NAME)
-  db.exec(SCHEMA_SQL)
-  return db
+  if (!initPromise) {
+    initPromise = (async () => {
+      if (!sqlite3) sqlite3 = await sqlite3InitModule()
+      // OPFS persistent VFS; requires running inside a Worker.
+      const handle = new sqlite3.oo1.OpfsDb(DB_NAME)
+      handle.exec(SCHEMA_SQL) // assign db only after schema applied
+      db = handle
+      return db
+    })()
+  }
+  return initPromise
 }
 
 async function runExec(sql: string, params: unknown[]) {
@@ -47,6 +55,7 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       const d = await ready()
       d.close()
       db = undefined
+      initPromise = undefined
       await sqlite3.oo1.OpfsDb.importDb(DB_NAME, msg.bytes)
       await ready()
       post({ id: msg.id, ok: true })

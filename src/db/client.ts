@@ -21,6 +21,12 @@ export function makeWorkerExecutor(): WorkerExecutor {
     else p.reject(new Error(error))
   }
 
+  worker.onerror = (e) => {
+    const err = new Error(`Worker crashed: ${e.message}`)
+    for (const p of pending.values()) p.reject(err)
+    pending.clear()
+  }
+
   const send = (payload: Record<string, unknown>, transfer: Transferable[] = []) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new Promise<any>((resolve, reject) => {
@@ -34,16 +40,18 @@ export function makeWorkerExecutor(): WorkerExecutor {
     return rows as Row[]
   }
 
+  const txExecutor: SqlExecutor = {
+    exec,
+    transaction: (f) => f(txExecutor), // nested tx participates in the open transaction; no extra BEGIN
+    close: async () => {},
+  }
+
   const self: WorkerExecutor = {
     exec,
     async transaction(fn) {
       await exec('BEGIN')
       try {
-        const result = await fn({
-          exec,
-          transaction: (f) => f(self),
-          close: async () => {},
-        })
+        const result = await fn(txExecutor)
         await exec('COMMIT')
         return result
       } catch (err) {

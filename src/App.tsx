@@ -6,6 +6,7 @@ import type { LogTarget } from './components/home/QuickLogGrid'
 import { Growth } from './components/growth/Growth'
 import { History } from './components/history/History'
 import { EditEntrySheet } from './components/history/EditEntrySheet'
+import { Settings } from './components/settings/Settings'
 import type { Entry } from './db/types'
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
         )}
         {tab === 'growth' && <Growth />}
         {tab === 'history' && <History key={refreshKey} onEdit={setEditing} />}
-        {tab === 'settings' && <h2 style={{ textTransform: 'capitalize' }}>{tab}</h2>}
+        {tab === 'settings' && <Settings />}
       </main>
       <BottomTabs active={tab} onChange={setTab} />
       <LogSheet

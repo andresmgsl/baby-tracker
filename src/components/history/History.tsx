@@ -8,7 +8,7 @@ import { formatClock } from '../../lib/time'
 const FILTERS: ('all' | EntryType)[] = ['all', 'breast', 'bottle', 'solids', 'sleep', 'diaper', 'meds', 'note']
 
 function dayKey(ts: number): string {
-  return new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  return new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 export function History({ onEdit }: { onEdit: (e: Entry) => void }) {

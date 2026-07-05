@@ -27,7 +27,22 @@
       "Bash(lsof -ti:5173)",
       "Bash(xargs kill)",
       "Bash(npx tsc *)",
-      "Bash(echo \"tsc exit: $?\")"
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(python3 -)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s http://localhost:5173/src/main.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:5173/src/db/worker.ts\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:5173/src/db/client.ts\")",
+      "Bash(lsof -iTCP:5173 -sTCP:LISTEN -n)",
+      "Bash(curl -sI http://localhost:5173/)",
+      "Bash(curl -s \"http://localhost:5173/src/db/worker.ts\")",
+      "Bash(break)",
+      "Bash(git config *)",
+      "Bash(git -C /Users/andres/projects/claude add src/state/useActiveTimer.ts src/state/useEntries.ts src/state/useActiveTimer.test.tsx)",
+      "Bash(git -C /Users/andres/projects/claude status)",
+      "Bash(git -C /Users/andres/projects/claude status --short)",
+      "Bash(git *)"
     ]
   }
 }

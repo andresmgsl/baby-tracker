@@ -9,15 +9,23 @@ export function BackupSection() {
 
   async function doExport() {
     setStatus('Exporting…')
-    const bytes = await db.exportBytes()
-    downloadBytes(bytes, exportFilename(Date.now()))
-    setStatus('Exported.')
+    try {
+      const bytes = await db.exportBytes()
+      downloadBytes(bytes, exportFilename(Date.now()))
+      setStatus('Exported.')
+    } catch {
+      setStatus('Export failed.')
+    }
   }
   async function doImport(file: File) {
     if (!confirm('Importing replaces ALL current data. Continue?')) return
     setStatus('Importing…')
-    await db.importBytes(await readFileBytes(file))
-    setStatus('Imported. Reload to see changes.')
+    try {
+      await db.importBytes(await readFileBytes(file))
+      setStatus('Imported. Reload to see changes.')
+    } catch {
+      setStatus('Import failed.')
+    }
   }
 
   return (
@@ -26,7 +34,7 @@ export function BackupSection() {
       <button className="btn-primary" onClick={doExport}>Export database (.db)</button>
       <button className="btn-ghost" style={{ marginTop: 10 }} onClick={() => fileRef.current?.click()}>Import database</button>
       <input ref={fileRef} type="file" accept=".db,.sqlite3,application/x-sqlite3" hidden
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void doImport(f) }} />
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void doImport(f); e.target.value = '' }} />
       {status && <p className="muted">{status}</p>}
     </section>
   )

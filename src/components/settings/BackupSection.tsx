@@ -1,0 +1,53 @@
+import { useEffect, useRef, useState } from 'react'
+import { useDb } from '../../db/client'
+import { exportFilename, downloadBytes, readFileBytes } from '../../lib/backup'
+import { getSetting, setSetting } from '../../db/queries'
+
+export function BackupSection() {
+  const db = useDb()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState('')
+  const [stale, setStale] = useState(false)
+
+  useEffect(() => {
+    void (async () => {
+      const last = await getSetting(db, 'last_export_ts')
+      setStale(!last || Date.now() - Number(last) > 14 * 86_400_000)
+    })()
+  }, [db])
+
+  async function doExport() {
+    setStatus('Exporting…')
+    try {
+      const bytes = await db.exportBytes()
+      downloadBytes(bytes, exportFilename(Date.now()))
+      setStale(false)
+      setStatus('Exported.')
+      await setSetting(db, 'last_export_ts', String(Date.now()))
+    } catch {
+      setStatus('Export failed.')
+    }
+  }
+  async function doImport(file: File) {
+    if (!confirm('Importing replaces ALL current data. Continue?')) return
+    setStatus('Importing…')
+    try {
+      await db.importBytes(await readFileBytes(file))
+      setStatus('Imported. Reload to see changes.')
+    } catch {
+      setStatus('Import failed.')
+    }
+  }
+
+  return (
+    <section className="card-section">
+      <h3>Backup</h3>
+      {stale && <p className="muted">⚠️ No backup in over 2 weeks — consider exporting.</p>}
+      <button className="btn-primary" onClick={doExport}>Export database (.db)</button>
+      <button className="btn-ghost" style={{ marginTop: 10 }} onClick={() => fileRef.current?.click()}>Import database</button>
+      <input ref={fileRef} type="file" accept=".db,.sqlite3,application/x-sqlite3" hidden
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void doImport(f); e.target.value = '' }} />
+      {status && <p className="muted">{status}</p>}
+    </section>
+  )
+}

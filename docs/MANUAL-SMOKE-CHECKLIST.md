@@ -2,6 +2,8 @@
 
 Run `npm run build && npm run preview`, open the preview URL on a real iPhone (Safari 17+).
 
+> **Hosting requirement:** This app needs cross-origin isolation (the server must send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`) for the OPFS SQLite database to open. The Vite dev server and `vite preview` are configured to send these headers; any production host (e.g. static hosting) must send them too, or the database will fail to open.
+
 - [ ] Add to Home Screen → app icon appears, launches fullscreen (no Safari chrome).
 - [ ] Log a bottle feed; confirm it appears in Home timeline and today's totals update.
 - [ ] Start a breastfeed timer; lock the phone for 1 minute; reopen → banner shows ~1m elapsed.

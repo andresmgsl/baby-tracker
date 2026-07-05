@@ -27,8 +27,14 @@ export default defineConfig({
       },
     })] : []),
   ] as any,
-  // sqlite-wasm + OPFS require cross-origin isolation headers in dev.
+  // sqlite-wasm + OPFS require cross-origin isolation headers in dev and preview.
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+  },
+  preview: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',

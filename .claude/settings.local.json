@@ -42,7 +42,8 @@
       "Bash(git -C /Users/andres/projects/claude add src/state/useActiveTimer.ts src/state/useEntries.ts src/state/useActiveTimer.test.tsx)",
       "Bash(git -C /Users/andres/projects/claude status)",
       "Bash(git -C /Users/andres/projects/claude status --short)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b=Buffer.from\\('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64'\\);for\\(const f of ['public/icon-192.png','public/icon-512.png','public/icon-maskable-512.png']\\){fs.mkdirSync\\('public',{recursive:true}\\);fs.writeFileSync\\(f,b\\)}\")"
     ]
   }
 }

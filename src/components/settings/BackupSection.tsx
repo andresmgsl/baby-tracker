@@ -21,9 +21,9 @@ export function BackupSection() {
     try {
       const bytes = await db.exportBytes()
       downloadBytes(bytes, exportFilename(Date.now()))
-      await setSetting(db, 'last_export_ts', String(Date.now()))
       setStale(false)
       setStatus('Exported.')
+      await setSetting(db, 'last_export_ts', String(Date.now()))
     } catch {
       setStatus('Export failed.')
     }

@@ -3,6 +3,7 @@ import { BottomTabs, type TabId } from './components/BottomTabs'
 import { Home } from './components/home/Home'
 import { LogSheet } from './components/home/LogSheet'
 import type { LogTarget } from './components/home/QuickLogGrid'
+import { Growth } from './components/growth/Growth'
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
@@ -14,7 +15,8 @@ export default function App() {
         {tab === 'home' && (
           <Home key={refreshKey} onLog={setTarget} onSelectEntry={() => {}} />
         )}
-        {tab !== 'home' && <h2 style={{ textTransform: 'capitalize' }}>{tab}</h2>}
+        {tab === 'growth' && <Growth />}
+        {tab !== 'home' && tab !== 'growth' && <h2 style={{ textTransform: 'capitalize' }}>{tab}</h2>}
       </main>
       <BottomTabs active={tab} onChange={setTab} />
       <LogSheet

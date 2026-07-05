@@ -53,6 +53,11 @@ export function Home({
     <div>
       {timer && <TimerBanner timer={timer} elapsed={elapsed} onStop={stopTimer} />}
       <QuickLogGrid lasts={lasts} onLog={onLog} now={now} />
+      <div className="more-row">
+        <button className="btn-link" onClick={() => onLog('measure')}>📏 Measure</button>
+        <button className="btn-link" onClick={() => onLog('temperature')}>🌡️ Temp</button>
+        <button className="btn-link" onClick={() => onLog('note')}>📝 Note</button>
+      </div>
       <div className="sectlbl">Today</div>
       <TotalsStrip totals={totals} />
       <div className="sectlbl">Timeline</div>

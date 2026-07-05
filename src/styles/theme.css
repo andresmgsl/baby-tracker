@@ -63,3 +63,6 @@ body {
 .btn-start { width: 100%; background: var(--green); color: #fff; border: 0; border-radius: 13px; padding: 14px; font-weight: 700; margin-bottom: 10px; }
 .btn-link { display: block; width: 100%; background: none; border: 0; color: var(--muted); padding: 6px; }
 .timer-display { text-align: center; padding: 12px; color: var(--green); font-weight: 600; }
+.chart { background: var(--surface); border-radius: var(--radius); margin: 8px 0 14px; }
+.latest { margin: 8px 2px; } .latest b { font-size: 18px; }
+.more-row { display:flex; gap:8px; margin-bottom:14px; } .more-row .btn-link { width:auto; }

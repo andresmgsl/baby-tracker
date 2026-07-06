@@ -9,6 +9,7 @@ import { History } from './components/history/History'
 import { EditEntrySheet } from './components/history/EditEntrySheet'
 import { Settings } from './components/settings/Settings'
 import type { Entry } from './db/types'
+import { useLiveSync } from './state/useLiveSync'
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
@@ -17,6 +18,7 @@ export default function App() {
   const [editing, setEditing] = useState<Entry | null>(null)
   const [sleepOpen, setSleepOpen] = useState(false)
   const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  useLiveSync(() => setRefreshKey((k) => k + 1))
   return (
     <div className="app">
       <header className="masthead">

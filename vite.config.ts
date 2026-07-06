@@ -11,8 +11,8 @@ export default defineConfig({
       manifest: {
         name: 'Baby Tracker',
         short_name: 'Baby',
-        theme_color: '#0f1115',
-        background_color: '#0f1115',
+        theme_color: '#f2efe6',
+        background_color: '#211e28',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -22,25 +22,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,wasm}'],
+        globPatterns: ['**/*.{js,css,html}'],
+        // The app shell is cached for offline launch; data lives on the server API,
+        // which is never precached (navigateFallbackDenylist keeps /api uncached).
+        navigateFallbackDenylist: [/^\/api\//],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     })] : []),
   ] as any,
-  // sqlite-wasm + OPFS require cross-origin isolation headers in dev and preview.
+  // Data now lives on the server API; the browser no longer runs SQLite/OPFS,
+  // so cross-origin-isolation headers are no longer required.
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+    proxy: {
+      '/api': { target: 'http://localhost:8787', changeOrigin: true },
     },
   },
-  preview: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
-  },
-  optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
   test: {
     globals: true,
     environment: 'jsdom',

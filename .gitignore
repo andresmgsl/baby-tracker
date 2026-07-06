@@ -1,6 +1,9 @@
 node_modules/
 .superpowers/
 dist/
+server-dist/
+data/
+.env
 .DS_Store
 *.db
 *.tsbuildinfo

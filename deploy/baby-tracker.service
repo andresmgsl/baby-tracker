@@ -1,0 +1,26 @@
+# systemd unit for the BabyLog API server.
+# Install:  sudo cp deploy/baby-tracker.service /etc/systemd/system/
+# Edit User= and the paths below to match your machine, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now baby-tracker
+#   systemctl status baby-tracker   /   journalctl -u baby-tracker -f
+
+[Unit]
+Description=BabyLog API server
+After=network.target
+
+[Service]
+Type=simple
+# Run as an unprivileged user that owns the project and data dir (e.g. your login user).
+User=pi
+WorkingDirectory=/opt/baby-tracker
+EnvironmentFile=/opt/baby-tracker/.env
+ExecStart=/usr/bin/env node server-dist/index.mjs
+Restart=on-failure
+RestartSec=2
+# Hardening (optional but nice): allow writes only to the data dir.
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

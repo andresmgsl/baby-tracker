@@ -4,15 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:client": "vite",
+    "server": "node --experimental-strip-types --watch server/index.ts",
     "build": "tsc -b && vite build",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=server-dist/index.mjs",
+    "start": "node server-dist/index.mjs",
+    "hash-password": "node scripts/hash-password.mjs",
     "preview": "vite preview",
     "test": "vitest run"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@sqlite.org/sqlite-wasm": "^3.46.1-build3"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.8",
@@ -22,7 +27,7 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "better-sqlite3": "^12.11.1",
+    "esbuild": "^0.25.12",
     "jsdom": "^25.0.0",
     "typescript": "^5.5.4",
     "vite": "^6.0.0",

@@ -14,8 +14,13 @@ export default function App() {
   const [target, setTarget] = useState<LogTarget | 'note' | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [editing, setEditing] = useState<Entry | null>(null)
+  const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
   return (
     <div className="app">
+      <header className="masthead">
+        <span className="mast-word">BABY<i>LOG</i></span>
+        <span className="mast-date">{today}</span>
+      </header>
       <main className="app-main">
         {tab === 'home' && (
           <Home key={refreshKey} onLog={setTarget} onSelectEntry={setEditing} />

@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     ...(process.env.NODE_ENV !== 'test' ? [VitePWA({
       registerType: 'prompt',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'Baby Tracker',
         short_name: 'Baby',

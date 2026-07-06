@@ -9,7 +9,7 @@ export function Timeline({ entries, onSelect }: { entries: Entry[]; onSelect: (e
       {entries.map((e) => {
         const { icon, text } = entryLabel(e)
         return (
-          <button key={e.id} className="row" onClick={() => onSelect(e)}>
+          <button key={e.id} className="row" data-type={e.type} onClick={() => onSelect(e)}>
             <span className="tm">{formatClock(e.start_ts)}</span>
             <span className="dot">{icon}</span>
             <span>{text}</span>

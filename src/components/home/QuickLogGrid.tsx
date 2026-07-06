@@ -22,7 +22,7 @@ export function QuickLogGrid({
   return (
     <div className="grid">
       {BUTTONS.map((b) => (
-        <button key={b.target} className="gbtn" onClick={() => onLog(b.target)}>
+        <button key={b.target} className="gbtn" data-type={b.target} onClick={() => onLog(b.target)}>
           <span className="ic">{b.icon}</span>
           <span className="nm">{b.label}</span>
           <span className="ago">{lasts[b.target] != null ? formatAgo(lasts[b.target]!, now) : '—'}</span>

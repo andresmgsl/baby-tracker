@@ -9,8 +9,15 @@ export function TimerBanner({
   onStop: () => void
 }) {
   return (
-    <button className="timer-banner" onClick={onStop}>
-      ● {timer.type === 'breast' ? `Breastfeed (${timer.side})` : 'Sleep'} timing… {formatElapsed(elapsed)} — tap to stop
+    <button className="timer-banner" data-type={timer.type} onClick={onStop}>
+      <span className="tb-info">
+        <span className="tb-live">
+          <i className="pulse" />
+          {timer.type === 'breast' ? `Breast · ${timer.side}` : 'Sleep'}
+        </span>
+        <span className="tb-stop">Tap to stop</span>
+      </span>
+      <span className="tb-time">{formatElapsed(elapsed)}</span>
     </button>
   )
 }

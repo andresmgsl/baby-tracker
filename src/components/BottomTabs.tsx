@@ -1,10 +1,10 @@
 export type TabId = 'home' | 'history' | 'growth' | 'settings'
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'home', label: 'Home', icon: '🍼' },
-  { id: 'history', label: 'History', icon: '📜' },
-  { id: 'growth', label: 'Growth', icon: '📈' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'home', label: 'Home' },
+  { id: 'history', label: 'History' },
+  { id: 'growth', label: 'Growth' },
+  { id: 'settings', label: 'Settings' },
 ]
 
 export function BottomTabs({
@@ -23,7 +23,6 @@ export function BottomTabs({
           aria-label={t.label}
           onClick={() => onChange(t.id)}
         >
-          <span className="ic">{t.icon}</span>
           {t.label}
         </button>
       ))}

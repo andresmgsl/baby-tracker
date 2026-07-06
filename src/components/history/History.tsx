@@ -46,7 +46,7 @@ export function History({ onEdit }: { onEdit: (e: Entry) => void }) {
             {items.map((e) => {
               const { icon, text } = entryLabel(e)
               return (
-                <button key={e.id} className="row" onClick={() => onEdit(e)}>
+                <button key={e.id} className="row" data-type={e.type} onClick={() => onEdit(e)}>
                   <span className="tm">{formatClock(e.start_ts)}</span>
                   <span className="dot">{icon}</span>
                   <span>{text}</span>

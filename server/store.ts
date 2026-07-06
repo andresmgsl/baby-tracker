@@ -14,10 +14,19 @@ export interface Store {
   close(): void
 }
 
+function ensureActiveTimerColumns(db: Database.Database): void {
+  const names = new Set(
+    (db.prepare('PRAGMA table_info(active_timer)').all() as { name: string }[]).map((c) => c.name),
+  )
+  if (!names.has('paused_ms')) db.exec('ALTER TABLE active_timer ADD COLUMN paused_ms INTEGER NOT NULL DEFAULT 0')
+  if (!names.has('paused_at')) db.exec('ALTER TABLE active_timer ADD COLUMN paused_at INTEGER')
+}
+
 export function openStore(dbPath: string): Store {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true })
   let db = new Database(dbPath)
   db.exec(SCHEMA_SQL)
+  ensureActiveTimerColumns(db)
 
   const runOn = (d: Database.Database, sql: string, params: unknown[] = []): Row[] => {
     const stmt = d.prepare(sql)
@@ -48,6 +57,7 @@ export function openStore(dbPath: string): Store {
         db = new Database(dbPath)
       }
       db.exec(SCHEMA_SQL)
+      ensureActiveTimerColumns(db)
     },
     close: () => db.close(),
   }

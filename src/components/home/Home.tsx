@@ -14,10 +14,11 @@ import { TimerBanner } from './TimerBanner'
 const LAST_TYPES: EntryType[] = ['breast', 'bottle', 'sleep', 'diaper', 'solids', 'meds']
 
 export function Home({
-  onLog, onSelectEntry,
+  onLog, onSelectEntry, onOpenSleep,
 }: {
   onLog: (t: LogTarget) => void
   onSelectEntry: (e: Entry) => void
+  onOpenSleep: () => void
 }) {
   const db = useDb()
   const now = Date.now()
@@ -51,8 +52,18 @@ export function Home({
 
   return (
     <div>
-      {timer && <TimerBanner timer={timer} elapsed={elapsed} onStop={stopTimer} />}
-      <QuickLogGrid lasts={lasts} onLog={onLog} now={now} />
+      {timer && (
+        <TimerBanner
+          timer={timer}
+          elapsed={elapsed}
+          onStop={timer.type === 'sleep' ? onOpenSleep : stopTimer}
+        />
+      )}
+      <QuickLogGrid
+        lasts={lasts}
+        onLog={(t) => (t === 'sleep' ? onOpenSleep() : onLog(t))}
+        now={now}
+      />
       <div className="more-row">
         <button className="btn-link" onClick={() => onLog('measure')}>📏 Measure</button>
         <button className="btn-link" onClick={() => onLog('temperature')}>🌡️ Temp</button>

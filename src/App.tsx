@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BottomTabs, type TabId } from './components/BottomTabs'
 import { Home } from './components/home/Home'
 import { LogSheet } from './components/home/LogSheet'
+import { SleepSession } from './components/home/SleepSession'
 import type { LogTarget } from './components/home/QuickLogGrid'
 import { Growth } from './components/growth/Growth'
 import { History } from './components/history/History'
@@ -14,6 +15,7 @@ export default function App() {
   const [target, setTarget] = useState<LogTarget | 'note' | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [editing, setEditing] = useState<Entry | null>(null)
+  const [sleepOpen, setSleepOpen] = useState(false)
   const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
   return (
     <div className="app">
@@ -23,7 +25,12 @@ export default function App() {
       </header>
       <main className="app-main">
         {tab === 'home' && (
-          <Home key={refreshKey} onLog={setTarget} onSelectEntry={setEditing} />
+          <Home
+            key={refreshKey}
+            onLog={setTarget}
+            onSelectEntry={setEditing}
+            onOpenSleep={() => setSleepOpen(true)}
+          />
         )}
         {tab === 'growth' && <Growth />}
         {tab === 'history' && <History key={refreshKey} onEdit={setEditing} />}
@@ -40,6 +47,13 @@ export default function App() {
         onClose={() => setEditing(null)}
         onChanged={() => { setEditing(null); setRefreshKey((k) => k + 1) }}
       />
+      {sleepOpen && (
+        <SleepSession
+          syncSignal={refreshKey}
+          onClose={() => setSleepOpen(false)}
+          onCommitted={() => { setSleepOpen(false); setRefreshKey((k) => k + 1) }}
+        />
+      )}
     </div>
   )
 }

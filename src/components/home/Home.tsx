@@ -10,6 +10,7 @@ import { QuickLogGrid, type LogTarget } from './QuickLogGrid'
 import { TotalsStrip } from './TotalsStrip'
 import { Timeline } from './Timeline'
 import { TimerBanner } from './TimerBanner'
+import { InstallBanner } from './InstallBanner'
 
 const LAST_TYPES: EntryType[] = ['breast', 'bottle', 'sleep', 'diaper', 'solids', 'meds']
 
@@ -52,6 +53,7 @@ export function Home({
 
   return (
     <div>
+      <InstallBanner />
       {timer && (
         <TimerBanner
           timer={timer}

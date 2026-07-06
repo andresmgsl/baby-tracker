@@ -55,7 +55,7 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
   }
 
   async function save() {
-    if (!timer) return
+    if (!timer || committing.current) return
     committing.current = true
     await insertEntry(db, {
       type: 'sleep', start_ts: timer.start_ts, end_ts: endTs ?? Date.now(),
@@ -73,6 +73,8 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
   }
 
   async function saveManual() {
+    if (committing.current) return
+    committing.current = true
     await insertEntry(db, {
       type: 'sleep', start_ts: manualTs, end_ts: manualTs + minutes * 60_000,
       note: note.trim() || null, ...EMPTY,

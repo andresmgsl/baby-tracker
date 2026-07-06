@@ -6,14 +6,19 @@ that owns one SQLite database. nginx serves the static files and reverse-proxies
 
 Both parents share **one** database on the Pi — logging on one phone shows up on the other.
 
-Assumes the repo lives at `/opt/baby-tracker` and the subdomain is `baby.abium.com`
+Assumes the repo lives at `/opt/baby-tracker` and the subdomain is `baby.abiqum.com`
 (adjust paths/host to taste).
 
 ## 1. DNS
 
-Point `baby.abium.com` at the Pi — either an `A` record to its public IP, or a
-`CNAME` to whatever you already use for the box (the same target as your Jellyfin host).
-Wait for it to resolve before running certbot.
+Already set: a `CNAME` record `baby` → `smallserver.asuscomm.com` (your ASUS router's
+DDNS), so `baby.abiqum.com` resolves to the Pi's network — the same path Jellyfin uses.
+Make sure ports 80 and 443 are forwarded to the Pi so certbot's challenge can reach it,
+then confirm it resolves before continuing:
+
+```bash
+dig +short baby.abiqum.com     # should chain to smallserver.asuscomm.com -> your IP
+```
 
 ## 2. Get the code onto the Pi
 
@@ -69,13 +74,13 @@ curl -s localhost:8787/api/me         # -> {"error":"Not signed in."}  (good: it
 ## 6. nginx + HTTPS
 
 ```bash
-sudo cp deploy/nginx-baby.abium.com.conf /etc/nginx/sites-available/baby.abium.com
-sudo ln -s /etc/nginx/sites-available/baby.abium.com /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-baby.abiqum.com.conf /etc/nginx/sites-available/baby.abiqum.com
+sudo ln -s /etc/nginx/sites-available/baby.abiqum.com /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d baby.abium.com     # adds the :443 block + redirect
+sudo certbot --nginx -d baby.abiqum.com     # adds the :443 block + redirect
 ```
 
-Open **https://baby.abium.com** → you should get the BABYLOG login. Sign in with
+Open **https://baby.abiqum.com** → you should get the BABYLOG login. Sign in with
 one of the accounts you created. Install it to your home screen (Add to Home Screen)
 to use it like an app.
 

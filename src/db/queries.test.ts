@@ -5,6 +5,7 @@ import {
   insertEntry, listEntries, listEntriesBetween, updateEntry, deleteEntry,
   insertMeasurement, listMeasurements, deleteMeasurement,
   getSetting, setSetting, startTimer, getActiveTimer, clearTimer, lastEntryByType,
+  latestChangeMarker,
 } from './queries'
 
 let db: SqlExecutor
@@ -100,5 +101,18 @@ describe('active timer', () => {
     expect(t).toEqual({ type: 'breast', start_ts: 1234, side: 'R' })
     await clearTimer(db, 'breast')
     expect(await getActiveTimer(db)).toBeNull()
+  })
+})
+
+describe('latestChangeMarker', () => {
+  it('is 0 with no data and rises after an insert', async () => {
+    const exec = await makeTestExecutor()
+    expect(await latestChangeMarker(exec)).toBe(0)
+    await insertEntry(exec, {
+      type: 'diaper', start_ts: 1_000, end_ts: null, side: null, amount_ml: null,
+      milk_type: null, food: null, diaper_kind: 'wet', med_name: null, med_dose: null,
+      note: null, photo_id: null,
+    })
+    expect(await latestChangeMarker(exec)).toBeGreaterThan(0)
   })
 })

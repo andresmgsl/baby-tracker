@@ -127,3 +127,15 @@ export async function getActiveTimer(exec: SqlExecutor): Promise<ActiveTimer | n
 export async function clearTimer(exec: SqlExecutor, type: ActiveTimer['type']): Promise<void> {
   await exec.exec('DELETE FROM active_timer WHERE type = ?', [type])
 }
+
+/** Max updated_at across mutable tables; a cheap signature for "did anything change". */
+export async function latestChangeMarker(exec: SqlExecutor): Promise<number> {
+  const rows = await exec.exec(
+    `SELECT MAX(m) AS marker FROM (
+       SELECT MAX(updated_at) AS m FROM entries
+       UNION ALL
+       SELECT MAX(updated_at) AS m FROM measurements
+     )`,
+  )
+  return (rows[0]?.marker as number | null) ?? 0
+}

@@ -30,5 +30,11 @@ export interface Measurement {
   created_at: number
   updated_at: number
 }
-export interface ActiveTimer { type: 'breast' | 'sleep'; start_ts: number; side: Side | null }
+export interface ActiveTimer {
+  type: 'breast' | 'sleep'
+  start_ts: number
+  side: Side | null
+  paused_ms: number
+  paused_at: number | null
+}
 export interface DailyTotals { feeds: number; diapers: number; sleepMs: number }

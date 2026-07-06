@@ -109,11 +109,29 @@ export async function setSetting(exec: SqlExecutor, key: string, value: string):
   )
 }
 
-export async function startTimer(exec: SqlExecutor, t: ActiveTimer): Promise<void> {
+export async function startTimer(
+  exec: SqlExecutor,
+  t: { type: ActiveTimer['type']; start_ts: number; side: ActiveTimer['side'] },
+): Promise<void> {
   await exec.exec(
-    `INSERT INTO active_timer (type, start_ts, side) VALUES (?, ?, ?)
-     ON CONFLICT(type) DO UPDATE SET start_ts = excluded.start_ts, side = excluded.side`,
+    `INSERT INTO active_timer (type, start_ts, side, paused_ms, paused_at) VALUES (?, ?, ?, 0, NULL)
+     ON CONFLICT(type) DO UPDATE SET start_ts = excluded.start_ts, side = excluded.side, paused_ms = 0, paused_at = NULL`,
     [t.type, t.start_ts, t.side],
+  )
+}
+
+export async function setTimerStart(exec: SqlExecutor, type: ActiveTimer['type'], start_ts: number): Promise<void> {
+  await exec.exec('UPDATE active_timer SET start_ts = ? WHERE type = ?', [start_ts, type])
+}
+
+export async function pauseTimer(exec: SqlExecutor, type: ActiveTimer['type'], now: number): Promise<void> {
+  await exec.exec('UPDATE active_timer SET paused_at = ? WHERE type = ? AND paused_at IS NULL', [now, type])
+}
+
+export async function resumeTimer(exec: SqlExecutor, type: ActiveTimer['type'], now: number): Promise<void> {
+  await exec.exec(
+    'UPDATE active_timer SET paused_ms = paused_ms + (? - paused_at), paused_at = NULL WHERE type = ? AND paused_at IS NOT NULL',
+    [now, type],
   )
 }
 
@@ -121,7 +139,13 @@ export async function getActiveTimer(exec: SqlExecutor): Promise<ActiveTimer | n
   const rows = await exec.exec('SELECT * FROM active_timer LIMIT 1')
   if (!rows.length) return null
   const r = rows[0]
-  return { type: r.type as ActiveTimer['type'], start_ts: r.start_ts as number, side: r.side as ActiveTimer['side'] }
+  return {
+    type: r.type as ActiveTimer['type'],
+    start_ts: r.start_ts as number,
+    side: r.side as ActiveTimer['side'],
+    paused_ms: (r.paused_ms as number) ?? 0,
+    paused_at: (r.paused_at as number | null) ?? null,
+  }
 }
 
 export async function clearTimer(exec: SqlExecutor, type: ActiveTimer['type']): Promise<void> {

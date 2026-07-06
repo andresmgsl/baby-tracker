@@ -144,6 +144,25 @@ The entire history is the single file at `DB_PATH`. Two ways to back it up:
   0 3 * * *  mkdir -p "$HOME/backups" && cp /opt/baby-tracker/data/baby-tracker.sqlite3 "$HOME/backups/baby-$(date +\%F).sqlite3"
   ```
 
+## PWA install (verify after deploy)
+
+The browser only offers "Install app" on Android/desktop Chrome when the site is served
+over HTTPS, the service worker registers, and the manifest points to **real** icons of at
+least 192×192 and 512×512. After deploying, confirm the manifest and icons are reachable
+and valid (a 404 or a tiny/placeholder icon silently suppresses the install prompt):
+
+```bash
+curl -sI https://baby.abiqum.com/manifest.webmanifest   # 200, application/manifest+json
+curl -sI https://baby.abiqum.com/icon-192.png           # 200, image/png
+curl -sI https://baby.abiqum.com/icon-512.png           # 200, image/png
+# sanity-check the icon is a real bitmap, not a placeholder (bytes should be multi-KB):
+curl -s https://baby.abiqum.com/icon-512.png | wc -c
+```
+
+On an Android phone, load the site, sign in, and the in-app **Install** banner should
+appear (or Chrome's ⋮ menu shows *Install app*). On iPhone/Safari there is no automatic
+prompt by design — use **Share → Add to Home Screen** (Settings → Install shows this hint).
+
 ## Troubleshooting
 
 - `journalctl -u baby-tracker -f` — server logs. On boot it prints the db path and the

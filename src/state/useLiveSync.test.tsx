@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { DbProvider } from '../db/client'
 import { makeTestExecutor } from '../db/testExecutor'
-import { insertEntry } from '../db/queries'
+import { insertEntry, startTimer } from '../db/queries'
 import { useLiveSync } from './useLiveSync'
 import type { WorkerExecutor } from '../db/client'
 
@@ -40,6 +40,15 @@ describe('useLiveSync', () => {
       milk_type: null, food: null, diaper_kind: 'wet', med_name: null, med_dose: null,
       note: null, photo_id: null,
     })
+    await act(async () => { vi.advanceTimersByTime(3000); await Promise.resolve(); await Promise.resolve() })
+    expect(onChange).toHaveBeenCalled()
+  })
+
+  it('fires when the active timer signature changes', async () => {
+    const onChange = vi.fn()
+    renderHook(() => useLiveSync(onChange, 3000), { wrapper })
+    await settle()
+    await startTimer(exec, { type: 'sleep', start_ts: 1000, side: null })
     await act(async () => { vi.advanceTimersByTime(3000); await Promise.resolve(); await Promise.resolve() })
     expect(onChange).toHaveBeenCalled()
   })

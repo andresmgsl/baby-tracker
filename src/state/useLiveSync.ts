@@ -16,14 +16,18 @@ export function useLiveSync(onChange: () => void, intervalMs = 3000): void {
     let cancelled = false
 
     async function poll() {
-      const [timer, marker] = await Promise.all([getActiveTimer(db), latestChangeMarker(db)])
-      if (cancelled) return
-      const sig = sigOf(timer)
-      const first = lastSig.current === null
-      const changed = !first && (sig !== lastSig.current || marker !== lastMarker.current)
-      lastSig.current = sig
-      lastMarker.current = marker
-      if (changed) onChangeRef.current()
+      try {
+        const [timer, marker] = await Promise.all([getActiveTimer(db), latestChangeMarker(db)])
+        if (cancelled) return
+        const sig = sigOf(timer)
+        const first = lastSig.current === null
+        const changed = !first && (sig !== lastSig.current || marker !== lastMarker.current)
+        lastSig.current = sig
+        lastMarker.current = marker
+        if (changed) onChangeRef.current()
+      } catch {
+        // transient poll failure — retry next tick
+      }
     }
 
     let id: ReturnType<typeof setInterval> | null = null

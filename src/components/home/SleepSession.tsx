@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDb } from '../../db/client'
 import { useActiveTimer } from '../../state/useActiveTimer'
-import { insertEntry, startTimer, clearTimer } from '../../db/queries'
-import { formatElapsed, elapsedMs, clampStartTs } from '../../lib/timer'
+import { insertEntry, startTimer, clearTimer, setTimerStart, pauseTimer, resumeTimer } from '../../db/queries'
+import { formatElapsed, netElapsed, clampStartTs } from '../../lib/timer'
 import { Stepper, TimeField } from './forms/formKit'
 
 const EMPTY = {
@@ -20,12 +20,12 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
   const db = useDb()
   const { timer, elapsed, refresh } = useActiveTimer()
   const running = timer?.type === 'sleep'
+  const paused = running && timer!.paused_at != null
 
   const [manual, setManual] = useState(false)
   const [minutes, setMinutes] = useState(45)
   const [manualTs, setManualTs] = useState(Date.now())
   const [note, setNote] = useState('')
-  const [endTs, setEndTs] = useState<number | null>(null)
   const [editingStart, setEditingStart] = useState(false)
   const [externalStopped, setExternalStopped] = useState(false)
 
@@ -48,17 +48,30 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
 
   async function editStart(ts: number) {
     if (!timer) return
-    const clamped = clampStartTs(ts, Date.now(), endTs)
-    await startTimer(db, { type: 'sleep', start_ts: clamped, side: timer.side })
+    const clamped = clampStartTs(ts, Date.now(), timer.paused_at)
+    await setTimerStart(db, 'sleep', clamped)
     await refresh()
     setEditingStart(false)
+  }
+
+  async function pause() {
+    if (!timer) return
+    await pauseTimer(db, 'sleep', Date.now())
+    await refresh()
+  }
+
+  async function resume() {
+    if (!timer) return
+    await resumeTimer(db, 'sleep', Date.now())
+    await refresh()
   }
 
   async function save() {
     if (!timer || committing.current) return
     committing.current = true
+    const end_ts = timer.start_ts + netElapsed(timer.start_ts, timer.paused_ms, timer.paused_at, Date.now())
     await insertEntry(db, {
-      type: 'sleep', start_ts: timer.start_ts, end_ts: endTs ?? Date.now(),
+      type: 'sleep', start_ts: timer.start_ts, end_ts,
       note: note.trim() || null, ...EMPTY,
     })
     await clearTimer(db, 'sleep')
@@ -82,7 +95,7 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
     onCommitted()
   }
 
-  const duration = endTs != null && timer ? elapsedMs(timer.start_ts, endTs) : elapsed
+  const duration = elapsed
 
   if (externalStopped) {
     return (
@@ -128,9 +141,9 @@ export function SleepSession({ syncSignal, onClose, onCommitted }: SleepSessionP
           <div className="sleep-duration">{formatElapsed(duration)}</div>
           <div className="sleep-duration-label">Duration</div>
 
-          <button className={`sleep-stop ${endTs != null ? 'stopped' : ''}`}
-            disabled={endTs != null} onClick={() => setEndTs(Date.now())}>
-            {endTs != null ? 'STOPPED' : 'STOP'}
+          <button className={`sleep-stop ${paused ? 'paused' : ''}`}
+            onClick={paused ? resume : pause}>
+            {paused ? 'RESUME' : 'STOP'}
           </button>
 
           <div className="sleep-startrow">

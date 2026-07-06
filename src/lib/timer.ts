@@ -4,6 +4,15 @@ export function elapsedMs(startTs: number, now: number): number {
   return Math.max(0, now - startTs)
 }
 
+/**
+ * Elapsed time excluding paused gaps. While paused (pausedAt != null) the value
+ * is frozen at the moment the pause began. `pausedMs` is the sum of prior pauses.
+ */
+export function netElapsed(startTs: number, pausedMs: number, pausedAt: number | null, now: number): number {
+  const end = pausedAt ?? now
+  return Math.max(0, end - startTs - pausedMs)
+}
+
 export function formatElapsed(ms: number): string {
   const total = Math.floor(ms / 1000)
   const h = Math.floor(total / 3600)

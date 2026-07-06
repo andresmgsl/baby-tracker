@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { elapsedMs, formatElapsed, clampStartTs } from './timer'
+import { elapsedMs, formatElapsed, clampStartTs, netElapsed } from './timer'
 
 describe('timer', () => {
   it('computes elapsed time, never negative', () => {
@@ -9,6 +9,23 @@ describe('timer', () => {
   it('formats mm:ss and h:mm:ss', () => {
     expect(formatElapsed(4 * 60_000 + 12_000)).toBe('04:12')
     expect(formatElapsed(3_600_000 + 4 * 60_000 + 12_000)).toBe('1:04:12')
+  })
+})
+
+describe('netElapsed', () => {
+  it('ticks while running (no pause)', () => {
+    expect(netElapsed(1000, 0, null, 5000)).toBe(4000)
+  })
+  it('subtracts accumulated paused time while running', () => {
+    expect(netElapsed(1000, 1500, null, 5000)).toBe(2500)
+  })
+  it('freezes at pausedAt while paused, minus accumulated pauses', () => {
+    // frozen: 8000 - 1000 - 2000 = 5000, independent of `now`
+    expect(netElapsed(1000, 2000, 8000, 999_999)).toBe(5000)
+  })
+  it('never goes negative', () => {
+    expect(netElapsed(5000, 0, null, 1000)).toBe(0)
+    expect(netElapsed(1000, 10_000, null, 5000)).toBe(0)
   })
 })
 

@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS active_timer (
   type TEXT PRIMARY KEY,
   start_ts INTEGER NOT NULL,
-  side TEXT
+  side TEXT,
+  paused_ms INTEGER NOT NULL DEFAULT 0,
+  paused_at INTEGER
 );
 `

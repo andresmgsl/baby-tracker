@@ -583,6 +583,7 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
 }
 .sleep-stop:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
 .sleep-stop.stopped { color: var(--muted); border-color: var(--line); box-shadow: none; }
+.sleep-stop.paused { background: var(--c-sleep); color: var(--panel); }
 .sleep-startrow {
   display: flex; align-items: center; gap: 10px;
   font: 500 14px var(--font-sans); color: var(--muted);

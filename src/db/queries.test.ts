@@ -5,7 +5,7 @@ import {
   insertEntry, listEntries, listEntriesBetween, updateEntry, deleteEntry,
   insertMeasurement, listMeasurements, deleteMeasurement,
   getSetting, setSetting, startTimer, getActiveTimer, clearTimer, lastEntryByType,
-  latestChangeMarker,
+  latestChangeMarker, setTimerStart, pauseTimer, resumeTimer,
 } from './queries'
 
 let db: SqlExecutor
@@ -98,9 +98,53 @@ describe('active timer', () => {
     expect(await getActiveTimer(db)).toBeNull()
     await startTimer(db, { type: 'breast', start_ts: 1234, side: 'R' })
     const t = await getActiveTimer(db)
-    expect(t).toEqual({ type: 'breast', start_ts: 1234, side: 'R' })
+    expect(t).toEqual({ type: 'breast', start_ts: 1234, side: 'R', paused_ms: 0, paused_at: null })
     await clearTimer(db, 'breast')
     expect(await getActiveTimer(db)).toBeNull()
+  })
+
+  it('starts with clean pause state', async () => {
+    await startTimer(db, { type: 'sleep', start_ts: 1000, side: null })
+    const t = await getActiveTimer(db)
+    expect(t?.paused_ms).toBe(0)
+    expect(t?.paused_at).toBeNull()
+  })
+
+  it('pauseTimer sets paused_at once and is a no-op while already paused', async () => {
+    await startTimer(db, { type: 'sleep', start_ts: 1000, side: null })
+    await pauseTimer(db, 'sleep', 5000)
+    expect((await getActiveTimer(db))?.paused_at).toBe(5000)
+    await pauseTimer(db, 'sleep', 9000) // already paused → ignored
+    expect((await getActiveTimer(db))?.paused_at).toBe(5000)
+  })
+
+  it('resumeTimer accumulates paused_ms and clears paused_at', async () => {
+    await startTimer(db, { type: 'sleep', start_ts: 1000, side: null })
+    await pauseTimer(db, 'sleep', 5000)
+    await resumeTimer(db, 'sleep', 8000) // +3000
+    let t = await getActiveTimer(db)
+    expect(t?.paused_ms).toBe(3000)
+    expect(t?.paused_at).toBeNull()
+    await pauseTimer(db, 'sleep', 10_000)
+    await resumeTimer(db, 'sleep', 10_500) // +500 → 3500
+    t = await getActiveTimer(db)
+    expect(t?.paused_ms).toBe(3500)
+  })
+
+  it('resumeTimer is a no-op while running', async () => {
+    await startTimer(db, { type: 'sleep', start_ts: 1000, side: null })
+    await resumeTimer(db, 'sleep', 9000)
+    expect((await getActiveTimer(db))?.paused_ms).toBe(0)
+  })
+
+  it('setTimerStart changes start_ts but preserves pause state', async () => {
+    await startTimer(db, { type: 'sleep', start_ts: 1000, side: 'L' })
+    await pauseTimer(db, 'sleep', 5000)
+    await setTimerStart(db, 'sleep', 2000)
+    const t = await getActiveTimer(db)
+    expect(t?.start_ts).toBe(2000)
+    expect(t?.side).toBe('L')
+    expect(t?.paused_at).toBe(5000)
   })
 })
 

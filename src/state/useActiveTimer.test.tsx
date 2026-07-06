@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { DbProvider } from '../db/client'
 import { makeTestExecutor } from '../db/testExecutor'
-import { startTimer } from '../db/queries'
+import { startTimer, pauseTimer } from '../db/queries'
 import { useActiveTimer } from './useActiveTimer'
 import type { WorkerExecutor } from '../db/client'
 
@@ -40,6 +40,22 @@ describe('useActiveTimer', () => {
       vi.advanceTimersByTime(1_000)
     })
     expect(result.current.elapsed).toBe(7_000)
+  })
+
+  it('reports frozen net elapsed while paused and does not tick', async () => {
+    vi.setSystemTime(10_000)
+    await startTimer(exec, { type: 'sleep', start_ts: 1_000, side: null })
+    await pauseTimer(exec, 'sleep', 4_000) // net frozen at 3_000ms
+    const { result } = renderHook(() => useActiveTimer(), { wrapper })
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.timer?.paused_at).toBe(4_000)
+    expect(result.current.elapsed).toBe(3_000)
+    // Advancing the clock must NOT change elapsed — the timer is paused.
+    await act(async () => { vi.advanceTimersByTime(5_000) })
+    expect(result.current.elapsed).toBe(3_000)
   })
 
   it('reports no elapsed time when there is no active timer', async () => {

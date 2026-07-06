@@ -64,12 +64,23 @@ NODE_ENV=production
 
 ```bash
 sudo cp deploy/baby-tracker.service /etc/systemd/system/
-sudoedit /etc/systemd/system/baby-tracker.service   # set User= and check paths
+# Run as your user:
+sudo sed -i "s|^User=.*|User=$USER|" /etc/systemd/system/baby-tracker.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now baby-tracker
 systemctl status baby-tracker         # should be active (running)
 curl -s localhost:8787/api/me         # -> {"error":"Not signed in."}  (good: it's up)
 ```
+
+> **If it exits with `status=127` / `env: 'node': No such file or directory`:** node
+> isn't on systemd's PATH (typical when node was installed via **nvm**, under your home
+> dir). Point ExecStart at node's absolute path:
+> ```bash
+> sudo sed -i "s|^ExecStart=.*|ExecStart=$(which node) server-dist/index.mjs|" \
+>   /etc/systemd/system/baby-tracker.service
+> sudo systemctl daemon-reload && sudo systemctl restart baby-tracker
+> ```
+> Make sure `User=` is the user that owns that nvm install.
 
 ## 6. nginx + HTTPS
 

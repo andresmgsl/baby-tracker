@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- neobrutalist BABYLOG app icon: full-bleed magenta, ink B in the maskable safe zone -->
+  <rect width="512" height="512" fill="#FF5FA2"/>
+  <!-- B mark: favicon's 32-unit glyph scaled x15 and centered (safe within the inner 80%) -->
+  <g fill="#0A090D" transform="translate(46,16) scale(15)">
+    <rect x="9"  y="8"    width="3"  height="16"/>  <!-- stem -->
+    <rect x="9"  y="8"    width="10" height="3"/>   <!-- top bar -->
+    <rect x="16" y="8"    width="3"  height="8"/>   <!-- upper bowl right -->
+    <rect x="9"  y="13.5" width="10" height="3"/>   <!-- middle bar -->
+    <rect x="16" y="15"   width="3"  height="9"/>   <!-- lower bowl right -->
+    <rect x="9"  y="21"   width="11" height="3"/>   <!-- bottom bar -->
+  </g>
+</svg>

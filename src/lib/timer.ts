@@ -11,3 +11,8 @@ export function formatElapsed(ms: number): string {
   const s = total % 60
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
 }
+
+/** Start time can never sit after the end of the interval (now, or a frozen end). */
+export function clampStartTs(desired: number, now: number, endTs: number | null): number {
+  return Math.min(desired, endTs ?? now)
+}

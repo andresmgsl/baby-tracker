@@ -21,7 +21,7 @@ describe('Home', () => {
       milk_type: 'formula', food: null, diaper_kind: null, med_name: null,
       med_dose: null, note: null, photo_id: null,
     })
-    render(<Home onLog={() => {}} onSelectEntry={() => {}} />, { wrapper })
+    render(<Home onLog={() => {}} onSelectEntry={() => {}} onOpenSleep={() => {}} />, { wrapper })
     await waitFor(() => expect(screen.getByText(/90ml · formula/)).toBeInTheDocument())
     expect(screen.getByText('1')).toBeInTheDocument() // 1 feed total
   })

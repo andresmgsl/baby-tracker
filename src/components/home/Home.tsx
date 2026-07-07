@@ -11,22 +11,31 @@ import { TotalsStrip } from './TotalsStrip'
 import { Timeline } from './Timeline'
 import { TimerBanner } from './TimerBanner'
 import { InstallBanner } from './InstallBanner'
+import { dayGroups } from './dayGroups'
+import { TimelineFilter, filterEntries } from './TimelineFilter'
 
 const LAST_TYPES: EntryType[] = ['breast', 'bottle', 'sleep', 'diaper', 'solids', 'meds']
+const DAY = 86_400_000
 
 export function Home({
-  onLog, onSelectEntry, onOpenSleep,
+  onLog, onSelectEntry, onOpenSleep, onSeeAll,
 }: {
   onLog: (t: LogTarget) => void
   onSelectEntry: (e: Entry) => void
   onOpenSleep: () => void
+  onSeeAll: () => void
 }) {
   const db = useDb()
   const now = Date.now()
-  const { entries, reload } = useEntries(startOfDay(now), endOfDay(now))
+  const { entries, reload } = useEntries(startOfDay(now - 2 * DAY), endOfDay(now))
   const { timer, elapsed, refresh } = useActiveTimer()
   const [lasts, setLasts] = useState<Partial<Record<LogTarget, number>>>({})
-  const totals = useMemo(() => computeDailyTotals(entries), [entries])
+  const [selected, setSelected] = useState<Set<EntryType>>(new Set())
+
+  const todayStart = startOfDay(now)
+  const todayEntries = useMemo(() => entries.filter((e) => e.start_ts >= todayStart), [entries, todayStart])
+  const totals = useMemo(() => computeDailyTotals(todayEntries), [todayEntries])
+  const groups = useMemo(() => dayGroups(filterEntries(entries, selected), now), [entries, selected, now])
 
   useEffect(() => {
     void (async () => {
@@ -38,6 +47,15 @@ export function Home({
       setLasts(out)
     })()
   }, [db, entries])
+
+  function toggle(t: EntryType) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(t)) next.delete(t)
+      else next.add(t)
+      return next
+    })
+  }
 
   async function stopTimer() {
     if (!timer) return
@@ -74,7 +92,15 @@ export function Home({
       <div className="sectlbl">Today</div>
       <TotalsStrip totals={totals} />
       <div className="sectlbl">Timeline</div>
-      <Timeline entries={entries} onSelect={onSelectEntry} />
+      <TimelineFilter selected={selected} onToggle={toggle} />
+      {groups.length === 0 && <p className="muted">No entries in the last 3 days.</p>}
+      {groups.map((g) => (
+        <div key={g.key}>
+          <div className="daylbl">{g.label}</div>
+          <Timeline entries={g.entries} onSelect={onSelectEntry} />
+        </div>
+      ))}
+      <button className="btn-link seeall" onClick={onSeeAll}>See all →</button>
     </div>
   )
 }

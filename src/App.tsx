@@ -32,6 +32,7 @@ export default function App() {
             onLog={setTarget}
             onSelectEntry={setEditing}
             onOpenSleep={() => setSleepOpen(true)}
+            onSeeAll={() => setTab('history')}
           />
         )}
         {tab === 'growth' && <Growth />}

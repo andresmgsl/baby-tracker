@@ -1,5 +1,4 @@
 import type { LogTarget } from './QuickLogGrid'
-import { BreastForm } from './forms/BreastForm'
 import { BottleForm } from './forms/BottleForm'
 import { SolidsForm } from './forms/SolidsForm'
 import { DiaperForm } from './forms/DiaperForm'
@@ -9,7 +8,7 @@ import { MeasureForm } from '../growth/MeasureForm'
 import type { FormProps } from './forms/formKit'
 
 const FORMS: Record<string, (p: FormProps) => JSX.Element> = {
-  breast: BreastForm, bottle: BottleForm, solids: SolidsForm,
+  bottle: BottleForm, solids: SolidsForm,
   diaper: DiaperForm, meds: MedsForm, note: NoteForm,
 }
 

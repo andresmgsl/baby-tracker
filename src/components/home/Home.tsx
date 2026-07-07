@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDb } from '../../db/client'
 import { useEntries } from '../../state/useEntries'
 import { useActiveTimer } from '../../state/useActiveTimer'
-import { lastEntryByType, clearTimer, insertEntry } from '../../db/queries'
+import { lastEntryByType } from '../../db/queries'
 import { computeDailyTotals } from '../../lib/totals'
 import { startOfDay, endOfDay } from '../../lib/time'
 import type { Entry, EntryType } from '../../db/types'
@@ -18,17 +18,18 @@ const LAST_TYPES: EntryType[] = ['breast', 'bottle', 'sleep', 'diaper', 'solids'
 const DAY = 86_400_000
 
 export function Home({
-  onLog, onSelectEntry, onOpenSleep, onSeeAll,
+  onLog, onSelectEntry, onOpenSleep, onOpenBreast, onSeeAll,
 }: {
   onLog: (t: LogTarget) => void
   onSelectEntry: (e: Entry) => void
   onOpenSleep: () => void
+  onOpenBreast: () => void
   onSeeAll: () => void
 }) {
   const db = useDb()
   const now = Date.now()
-  const { entries, reload } = useEntries(startOfDay(now - 2 * DAY), endOfDay(now))
-  const { timer, elapsed, refresh } = useActiveTimer()
+  const { entries } = useEntries(startOfDay(now - 2 * DAY), endOfDay(now))
+  const { timer, elapsed } = useActiveTimer()
   const [lasts, setLasts] = useState<Partial<Record<LogTarget, number>>>({})
   const [selected, setSelected] = useState<Set<EntryType>>(new Set())
 
@@ -57,18 +58,6 @@ export function Home({
     })
   }
 
-  async function stopTimer() {
-    if (!timer) return
-    await insertEntry(db, {
-      type: timer.type, start_ts: timer.start_ts, end_ts: Date.now(), side: timer.side,
-      amount_ml: null, milk_type: null, food: null, diaper_kind: null,
-      med_name: null, med_dose: null, note: null, photo_id: null,
-    })
-    await clearTimer(db, timer.type)
-    await refresh()
-    await reload()
-  }
-
   return (
     <div>
       <InstallBanner />
@@ -76,12 +65,12 @@ export function Home({
         <TimerBanner
           timer={timer}
           elapsed={elapsed}
-          onStop={timer.type === 'sleep' ? onOpenSleep : stopTimer}
+          onStop={timer.type === 'sleep' ? onOpenSleep : onOpenBreast}
         />
       )}
       <QuickLogGrid
         lasts={lasts}
-        onLog={(t) => (t === 'sleep' ? onOpenSleep() : onLog(t))}
+        onLog={(t) => (t === 'sleep' ? onOpenSleep() : t === 'breast' ? onOpenBreast() : onLog(t))}
         now={now}
       />
       <div className="more-row">

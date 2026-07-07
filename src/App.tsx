@@ -3,6 +3,7 @@ import { BottomTabs, type TabId } from './components/BottomTabs'
 import { Home } from './components/home/Home'
 import { LogSheet } from './components/home/LogSheet'
 import { SleepSession } from './components/home/SleepSession'
+import { BreastSession } from './components/home/BreastSession'
 import type { LogTarget } from './components/home/QuickLogGrid'
 import { Growth } from './components/growth/Growth'
 import { History } from './components/history/History'
@@ -17,6 +18,7 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [editing, setEditing] = useState<Entry | null>(null)
   const [sleepOpen, setSleepOpen] = useState(false)
+  const [breastOpen, setBreastOpen] = useState(false)
   const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
   useLiveSync(() => setRefreshKey((k) => k + 1))
   return (
@@ -32,6 +34,7 @@ export default function App() {
             onLog={setTarget}
             onSelectEntry={setEditing}
             onOpenSleep={() => setSleepOpen(true)}
+            onOpenBreast={() => setBreastOpen(true)}
             onSeeAll={() => setTab('history')}
           />
         )}
@@ -55,6 +58,13 @@ export default function App() {
           syncSignal={refreshKey}
           onClose={() => setSleepOpen(false)}
           onCommitted={() => { setSleepOpen(false); setRefreshKey((k) => k + 1) }}
+        />
+      )}
+      {breastOpen && (
+        <BreastSession
+          syncSignal={refreshKey}
+          onClose={() => setBreastOpen(false)}
+          onCommitted={() => { setBreastOpen(false); setRefreshKey((k) => k + 1) }}
         />
       )}
     </div>

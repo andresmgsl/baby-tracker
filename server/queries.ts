@@ -59,7 +59,10 @@ export const QUERIES: Record<string, QueryDef> = {
   updateEntry: {
     scope: 'baby',
     run(db, ctx, { id, patch }) {
-      const keys = Object.keys(patch)
+      // Allowlist patchable columns: baby_id/id/created_at/updated_at must not be
+      // client-assignable, else a client could reassign its own entry to another
+      // family's baby (WHERE only proves the SOURCE row is theirs).
+      const keys = Object.keys(patch).filter((k) => (ENTRY_COLS as readonly string[]).includes(k))
       if (keys.length === 0) return []
       const set = keys.map((k) => `${k} = ?`).join(', ')
       const values = keys.map((k) => patch[k])

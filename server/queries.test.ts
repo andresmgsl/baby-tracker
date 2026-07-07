@@ -37,6 +37,15 @@ test('updateEntry/deleteEntry cannot touch another baby row', () => {
   expect(QUERIES.listEntries.run(qdb, ctx, {})).toHaveLength(1)
 })
 
+test('updateEntry cannot reassign baby_id (allowlisted patch columns)', () => {
+  const { qdb, ctx, babyId } = harness()
+  const id = Number(QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })[0].id)
+  QUERIES.updateEntry.run(qdb, ctx, { id, patch: { baby_id: babyId + 999, note: 'x' } })
+  const [row] = QUERIES.listEntries.run(qdb, ctx, {})
+  expect(row.baby_id).toBe(babyId) // baby_id is non-patchable
+  expect(row.note).toBe('x') // legit column still applies
+})
+
 test('measurements are baby-scoped', () => {
   const { qdb, ctx, babyId } = harness()
   QUERIES.insertMeasurement.run(qdb, ctx, { type: 'weight', ts: 1, value: 4.2, note: null })

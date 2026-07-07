@@ -26,7 +26,7 @@ export function LogSheet({
       : FORMS[target]
   return (
     <div className="sheet-overlay" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet" data-type={target} onClick={(e) => e.stopPropagation()}>
         <div className="grab" />
         {Form && <Form onClose={onClose} onSaved={onSaved} />}
       </div>

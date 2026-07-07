@@ -34,7 +34,7 @@ function EditBody({ entry, onClose, onChanged }: { entry: Entry; onClose: () => 
 
   return (
     <div className="sheet-overlay" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet" data-type={entry.type} onClick={(e) => e.stopPropagation()}>
         <div className="grab" />
         <h4>Edit · {entryLabel(entry).text}</h4>
         <div className="sectlbl">Start</div>

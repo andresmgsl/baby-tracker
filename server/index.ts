@@ -13,6 +13,7 @@ const staticDir = process.env.STATIC_DIR || undefined // e.g. ./dist in producti
 const legacyFamily = process.env.LEGACY_FAMILY
   || [...users.values()][0]?.family
   || 'family'
+const adminFamily = process.env.ADMIN_FAMILY || undefined
 
 if (!secret) {
   console.error('FATAL: SESSION_SECRET is not set. Copy deploy/.env.example to .env and fill it in.')
@@ -30,6 +31,7 @@ const server = createServer({
   secret,
   secureCookies: process.env.NODE_ENV === 'production',
   staticDir,
+  adminFamily,
 })
 
 server.listen(port, () => {

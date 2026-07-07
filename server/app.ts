@@ -17,6 +17,8 @@ export interface AppConfig {
   secureCookies?: boolean
   /** Directory of built static assets to serve for non-/api routes (prod). */
   staticDir?: string
+  /** When set, restricts /api/export and /api/import to accounts in this one family. */
+  adminFamily?: string
 }
 
 const MIME: Record<string, string> = {
@@ -55,7 +57,7 @@ function cookieHeader(token: string, secure: boolean, maxAgeMs: number): string 
 }
 
 export function createHandler(config: AppConfig) {
-  const { store, users, secret, secureCookies = false, staticDir } = config
+  const { store, users, secret, secureCookies = false, staticDir, adminFamily } = config
 
   const userOf = (req: IncomingMessage): string | null =>
     verifySession(parseCookies(req.headers.cookie)[COOKIE], secret)
@@ -129,11 +131,13 @@ export function createHandler(config: AppConfig) {
           return send(res, 200, { results })
         }
         if (url === '/api/export' && method === 'GET') {
+          if (adminFamily && familyOf(req) !== adminFamily) return send(res, 403, { error: 'Not authorized.' })
           return send(res, 200, store.serialize(), {
             'Content-Disposition': 'attachment; filename="baby-tracker.sqlite3"',
           })
         }
         if (url === '/api/import' && method === 'POST') {
+          if (adminFamily && familyOf(req) !== adminFamily) return send(res, 403, { error: 'Not authorized.' })
           store.replace(await readBody(req))
           return send(res, 200, { ok: true })
         }

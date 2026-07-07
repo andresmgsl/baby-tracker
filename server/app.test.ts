@@ -137,3 +137,36 @@ describe('export/import round-trip', () => {
     expect((await check.json()).rows[0].value).toBe('oz')
   })
 })
+
+describe('admin-scoped backup', () => {
+  it('blocks export/import for a non-admin family when adminFamily is set', async () => {
+    const adminStore = openStore(':memory:')
+    const adminUsers = new Map([
+      ['alice', { family: 'testfam', hash: hashPassword('pw123') }],
+    ])
+    const adminServer = createServer({
+      store: adminStore, users: adminUsers, secret: 'itsasecret', adminFamily: 'someotherfam',
+    })
+    await new Promise<void>((r) => adminServer.listen(0, r))
+    try {
+      const adminBase = `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}`
+
+      const loginRes = await fetch(`${adminBase}/api/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'alice', password: 'pw123' }),
+      })
+      expect(loginRes.status).toBe(200)
+      const cookie = loginRes.headers.get('set-cookie')!.split(';')[0]
+
+      const exportRes = await fetch(`${adminBase}/api/export`, { headers: { cookie } })
+      expect(exportRes.status).toBe(403)
+
+      const importRes = await fetch(`${adminBase}/api/import`, {
+        method: 'POST', headers: { cookie }, body: Buffer.from('irrelevant'),
+      })
+      expect(importRes.status).toBe(403)
+    } finally {
+      await new Promise<void>((r) => adminServer.close(() => r()))
+    }
+  })
+})

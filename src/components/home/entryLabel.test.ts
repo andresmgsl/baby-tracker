@@ -18,4 +18,22 @@ describe('entryLabel', () => {
     expect(entryLabel({ ...base, type: 'sleep', end_ts: 50 * 60_000 }))
       .toEqual({ icon: '😴', text: 'Sleep · 50 min' })
   })
+
+  it('breast shows both sides when both have time', () => {
+    const e = { ...base, type: 'breast' as const, side: 'both' as const, end_ts: 480_000,
+      left_ms: 300_000, right_ms: 180_000 }
+    expect(entryLabel(e)).toEqual({ icon: '🤱', text: 'Breast · L 5 min / R 3 min' })
+  })
+
+  it('breast shows a single side when only one has time', () => {
+    const e = { ...base, type: 'breast' as const, side: 'L' as const, end_ts: 300_000,
+      left_ms: 300_000, right_ms: 0 }
+    expect(entryLabel(e)).toEqual({ icon: '🤱', text: 'Breast · L · 5 min' })
+  })
+
+  it('breast falls back to side + duration for legacy rows without per-side data', () => {
+    const e = { ...base, type: 'breast' as const, side: 'both' as const, end_ts: 480_000,
+      left_ms: null, right_ms: null }
+    expect(entryLabel(e)).toEqual({ icon: '🤱', text: 'Breast · both · 8 min' })
+  })
 })

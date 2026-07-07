@@ -9,7 +9,7 @@ export interface Statement { sql: string; params?: unknown[] }
 
 export interface Store {
   exec(sql: string, params?: unknown[]): Row[]
-  transaction(statements: Statement[]): Row[][]
+  transaction<T>(fn: (qdb: { run(sql: string, params?: unknown[]): Row[] }) => T): T
   serialize(): Buffer
   replace(bytes: Buffer): void
   close(): void
@@ -95,9 +95,9 @@ export function openStore(dbPath: string, legacyFamily = 'family'): Store {
 
   return {
     exec: (sql, params = []) => runOn(db, sql, params),
-    transaction(statements) {
-      const tx = db.transaction((sts: Statement[]) => sts.map((s) => runOn(db, s.sql, s.params ?? [])))
-      return tx(statements)
+    transaction(fn) {
+      const run = db.transaction((f: () => unknown) => f())
+      return run(() => fn({ run: (sql: string, params: unknown[] = []) => runOn(db, sql, params) })) as never
     },
     serialize: () => db.serialize(),
     replace(bytes) {

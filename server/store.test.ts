@@ -207,3 +207,15 @@ describe('openStore migration', () => {
     store.close()
   })
 })
+
+describe('transaction', () => {
+  test('runs a function atomically', () => {
+    const store = openStore(':memory:')
+    store.transaction((qdb) => {
+      qdb.run("INSERT INTO settings (scope,key,value) VALUES ('f','a','1')")
+      qdb.run("INSERT INTO settings (scope,key,value) VALUES ('f','b','2')")
+    })
+    expect(store.exec("SELECT COUNT(*) c FROM settings WHERE scope='f'")[0].c).toBe(2)
+    store.close()
+  })
+})

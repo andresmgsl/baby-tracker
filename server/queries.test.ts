@@ -53,3 +53,28 @@ test('settings are family-scoped', () => {
   // A different family sees nothing.
   expect(QUERIES.getSetting.run(qdb, { family: 'nunez', babyId: -1 }, { key: 'units' })).toHaveLength(0)
 })
+
+test('timers are isolated per baby', () => {
+  const { qdb, ctx, babyId } = harness()
+  QUERIES.startTimer.run(qdb, ctx, { type: 'sleep', start_ts: 100, side: null })
+  expect(QUERIES.getActiveTimer.run(qdb, ctx, {})).toHaveLength(1)
+  expect(QUERIES.getActiveTimer.run(qdb, { ...ctx, babyId: babyId + 1 }, {})).toHaveLength(0)
+})
+
+test('startBreastSide records per-baby last side', () => {
+  const { qdb, ctx, babyId } = harness()
+  QUERIES.startBreastSide.run(qdb, ctx, { side: 'R', now: 500 })
+  expect(QUERIES.getSetting.run(qdb, ctx, { key: 'x' })).toBeDefined() // sanity: getSetting works
+  // last side stored under baby scope, not family scope:
+  const row = qdb.run("SELECT value FROM settings WHERE scope=? AND key='breast_last_side'", [`baby:${babyId}`])
+  expect(row[0].value).toBe('R')
+})
+
+test('latestChangeMarker reflects only this baby', () => {
+  const { qdb, ctx, babyId } = harness()
+  QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })
+  const mine = Number(QUERIES.latestChangeMarker.run(qdb, ctx, {})[0].marker)
+  const other = Number(QUERIES.latestChangeMarker.run(qdb, { ...ctx, babyId: babyId + 1 }, {})[0].marker)
+  expect(mine).toBeGreaterThan(0)
+  expect(other).toBe(0)
+})

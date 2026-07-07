@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { SCHEMA_SQL } from '../src/db/schema.ts'
+import { migrateToFamilies } from './migrate.ts'
 
 export type Row = Record<string, unknown>
 export interface Statement { sql: string; params?: unknown[] }
@@ -71,7 +72,7 @@ function ensureActiveTimerBaby(db: Database.Database): void {
   `)
 }
 
-export function openStore(dbPath: string): Store {
+export function openStore(dbPath: string, legacyFamily = 'family'): Store {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true })
   let db = new Database(dbPath)
   // ensureBabyColumns must run before SCHEMA_SQL: SCHEMA_SQL's CREATE INDEX statements for
@@ -83,6 +84,7 @@ export function openStore(dbPath: string): Store {
   ensureEntriesColumns(db)
   ensureSettingsScope(db)
   ensureActiveTimerBaby(db)
+  migrateToFamilies(db, legacyFamily)
 
   const runOn = (d: Database.Database, sql: string, params: unknown[] = []): Row[] => {
     const stmt = d.prepare(sql)
@@ -118,6 +120,7 @@ export function openStore(dbPath: string): Store {
       ensureEntriesColumns(db)
       ensureSettingsScope(db)
       ensureActiveTimerBaby(db)
+      migrateToFamilies(db, legacyFamily)
     },
     close: () => db.close(),
   }

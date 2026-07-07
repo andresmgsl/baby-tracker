@@ -14,7 +14,7 @@ const tempPath = () => {
 afterEach(() => { for (const p of paths.splice(0)) rmSync(p, { force: true }) })
 
 describe('openStore migration', () => {
-  it('adds pause columns to a pre-existing active_timer table and preserves rows in active_timer_legacy', () => {
+  it('adds pause columns to a pre-existing active_timer table and migrates the row onto the legacy baby', () => {
     const path = tempPath()
     // Simulate an old DB: active_timer without the pause columns, with a live timer.
     const old = new Database(path)
@@ -23,19 +23,16 @@ describe('openStore migration', () => {
     old.close()
 
     const store = openStore(path)
-    // This legacy table lacks baby_id, so ensureActiveTimerBaby renames it to active_timer_legacy
-    // (leaving it for Task 3 to migrate); ensureActiveTimerColumns ran on it first, in place,
-    // so the pause columns are already present on the legacy row.
-    const cols = store.exec('PRAGMA table_info(active_timer_legacy)').map((c) => c.name)
-    expect(cols).toContain('paused_ms')
-    expect(cols).toContain('paused_at')
+    // ensureActiveTimerBaby renames the legacy table to active_timer_legacy and
+    // ensureActiveTimerColumns backfills the pause columns on it in place; migrateToFamilies
+    // (Task 3) then moves the row onto the new baby_id-keyed active_timer and drops the legacy table.
+    expect(store.exec("SELECT name FROM sqlite_master WHERE name = 'active_timer_legacy'")).toEqual([])
 
-    const [row] = store.exec('SELECT * FROM active_timer_legacy')
+    const [row] = store.exec('SELECT * FROM active_timer')
     expect(row.start_ts).toBe(1000)
     expect(row.paused_ms).toBe(0)
     expect(row.paused_at).toBeNull()
-
-    expect(store.exec('SELECT * FROM active_timer')).toEqual([])
+    expect(row.baby_id).not.toBeNull()
     store.close()
   })
 
@@ -47,7 +44,7 @@ describe('openStore migration', () => {
     store.close()
   })
 
-  it('adds per-side columns to a pre-existing active_timer table and preserves rows in active_timer_legacy', () => {
+  it('adds per-side columns to a pre-existing active_timer table and migrates the row onto the legacy baby', () => {
     const path = tempPath()
     const old = new Database(path)
     old.exec(`CREATE TABLE active_timer (type TEXT PRIMARY KEY, start_ts INTEGER NOT NULL, side TEXT)`)
@@ -55,16 +52,14 @@ describe('openStore migration', () => {
     old.close()
 
     const store = openStore(path)
-    const cols = store.exec('PRAGMA table_info(active_timer_legacy)').map((c) => c.name)
-    expect(cols).toContain('left_ms')
-    expect(cols).toContain('right_ms')
-    expect(cols).toContain('running_since')
+    expect(store.exec("SELECT name FROM sqlite_master WHERE name = 'active_timer_legacy'")).toEqual([])
 
-    const [row] = store.exec('SELECT * FROM active_timer_legacy')
+    const [row] = store.exec('SELECT * FROM active_timer')
     expect(row.start_ts).toBe(1000)
     expect(row.left_ms).toBe(0)
     expect(row.right_ms).toBe(0)
     expect(row.running_since).toBeNull()
+    expect(row.baby_id).not.toBeNull()
     store.close()
   })
 
@@ -127,21 +122,23 @@ describe('openStore migration', () => {
     store.close()
   })
 
-  it('rebuilds legacy settings(key,value) into settings(scope,key,value), preserving rows in settings_legacy', () => {
+  it('rebuilds legacy settings(key,value) into settings(scope,key,value) and migrates rows onto the legacy family', () => {
     const path = tempPath()
     const old = new Database(path)
     old.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`)
     old.prepare(`INSERT INTO settings (key, value) VALUES ('units', 'metric')`).run()
     old.close()
 
-    const store = openStore(path)
+    const store = openStore(path, 'acme')
     const settingsCols = store.exec('PRAGMA table_info(settings)').map((c) => c.name)
     expect(settingsCols).toEqual(expect.arrayContaining(['scope', 'key', 'value']))
-    expect(store.exec('SELECT * FROM settings')).toEqual([])
+    // migrateToFamilies (Task 3) moves the row into the scoped settings table and
+    // drops settings_legacy in the same openStore call.
+    expect(store.exec("SELECT name FROM sqlite_master WHERE name = 'settings_legacy'")).toEqual([])
 
-    const [legacyRow] = store.exec('SELECT * FROM settings_legacy')
-    expect(legacyRow.key).toBe('units')
-    expect(legacyRow.value).toBe('metric')
+    const [row] = store.exec("SELECT * FROM settings WHERE key = 'units'")
+    expect(row.scope).toBe('acme')
+    expect(row.value).toBe('metric')
     store.close()
   })
 
@@ -175,13 +172,15 @@ describe('openStore migration', () => {
       created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`)
     old.close()
 
-    // First open performs the migration.
-    openStore(path).close()
-    // Second open (simulating a server restart) must be a no-op: no re-rename, no thrown error,
-    // legacy tables/rows untouched.
-    const store = openStore(path)
-    expect(store.exec('SELECT * FROM settings_legacy')).toHaveLength(1)
-    expect(store.exec('SELECT * FROM active_timer_legacy')).toHaveLength(1)
+    // First open performs the schema migrations and the one-time data migration: creates the
+    // legacy baby, backfills baby_id, moves settings/timer rows, and drops the legacy tables.
+    openStore(path, 'acme').close()
+    // Second open (simulating a server restart) must be a no-op: no re-migration, no thrown
+    // error, no duplicate baby, and the legacy tables stay gone.
+    const store = openStore(path, 'acme')
+    expect(store.exec("SELECT name FROM sqlite_master WHERE name = 'settings_legacy'")).toEqual([])
+    expect(store.exec("SELECT name FROM sqlite_master WHERE name = 'active_timer_legacy'")).toEqual([])
+    expect(store.exec('SELECT COUNT(*) c FROM babies')[0].c).toBe(1)
     const cols = store.exec('PRAGMA table_info(entries)').map((c) => c.name)
     expect(cols).toContain('baby_id')
     store.close()

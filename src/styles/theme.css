@@ -620,3 +620,40 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
 .install-banner-actions { display: flex; align-items: center; gap: 8px; }
 .install-banner .btn-primary { padding: 8px 12px; }
 .install-banner .btn-link { color: var(--ink); font-size: 16px; }
+
+/* ---------- timeline filter chips ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+.chip {
+  --c: var(--paper);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; font-size: 20px; line-height: 1;
+  background: var(--panel); color: var(--paper);
+  border: var(--bw) solid var(--line); border-radius: var(--radius);
+  opacity: 0.55; cursor: pointer;
+  transition: transform 0.06s ease, opacity 0.06s ease;
+}
+.chip[aria-label='breast'] { --c: var(--c-breast); }
+.chip[aria-label='bottle'] { --c: var(--c-bottle); }
+.chip[aria-label='solids'] { --c: var(--c-solids); }
+.chip[aria-label='sleep']  { --c: var(--c-sleep); }
+.chip[aria-label='diaper'] { --c: var(--c-diaper); }
+.chip[aria-label='meds']   { --c: var(--c-meds); }
+.chip[aria-pressed='true'] {
+  opacity: 1; color: var(--ink);
+  background: var(--c); border-color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.chip[aria-pressed='true']:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+
+/* ---------- day label + see all ---------- */
+.daylbl {
+  font: 900 11px var(--font-sans);
+  text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted);
+  margin: 16px 0 4px;
+}
+.seeall {
+  width: auto; display: block; margin: 16px auto 8px;
+  background: var(--panel); color: var(--paper);
+  border: var(--bw) solid var(--line); border-radius: var(--radius);
+  padding: 10px 18px;
+}

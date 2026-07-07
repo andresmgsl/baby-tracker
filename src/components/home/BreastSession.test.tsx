@@ -2,19 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { createElement } from 'react'
 import { DbProvider } from '../../db/client'
-import { makeTestExecutor } from '../../db/testExecutor'
+import { makeTestApi } from '../../db/testApi'
 import { getActiveTimer, listEntries } from '../../db/queries'
 import { BreastSession } from './BreastSession'
-import type { WorkerExecutor } from '../../db/client'
+import type { Api } from '../../db/client'
 
-let exec: WorkerExecutor
-beforeEach(async () => {
-  const base = await makeTestExecutor()
-  exec = Object.assign(base, {
-    exportBytes: async () => new Uint8Array(),
-    importBytes: async () => {},
-  }) as WorkerExecutor
-})
+let exec: Api
+beforeEach(() => { exec = makeTestApi().db })
 afterEach(() => vi.restoreAllMocks())
 
 const flush = () => act(async () => { await Promise.resolve(); await Promise.resolve() })

@@ -2,19 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { DbProvider } from '../db/client'
-import { makeTestExecutor } from '../db/testExecutor'
+import { makeTestApi } from '../db/testApi'
 import { insertEntry, startTimer } from '../db/queries'
 import { useLiveSync } from './useLiveSync'
-import type { WorkerExecutor } from '../db/client'
+import type { Api } from '../db/client'
 
-let exec: WorkerExecutor
-beforeEach(async () => {
+let exec: Api
+beforeEach(() => {
   vi.useFakeTimers()
-  const base = await makeTestExecutor()
-  exec = Object.assign(base, {
-    exportBytes: async () => new Uint8Array(),
-    importBytes: async () => {},
-  }) as WorkerExecutor
+  exec = makeTestApi().db
 })
 afterEach(() => vi.useRealTimers())
 

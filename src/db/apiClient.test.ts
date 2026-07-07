@@ -6,7 +6,7 @@ afterEach(() => vi.restoreAllMocks())
 
 test('q posts to /api/q with X-Baby-Id header from active baby', async () => {
   setActiveBabyId(42)
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ rows: [{ id: 1 }] }), { status: 200 }))
+  const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ rows: [{ id: 1 }] }), { status: 200 }))
   vi.stubGlobal('fetch', fetchMock)
   const api = makeApiClient()
   const rows = await api.q('insertEntry', { type: 'sleep', start_ts: 1 })

@@ -127,9 +127,11 @@ CREATE INDEX IF NOT EXISTS idx_babies_family ON babies(family);
 - The active baby travels in an **`X-Baby-Id` request header**, attached
   automatically by the client from the active-baby context.
 - Before running any baby-scoped query, the server validates the header:
-  `SELECT 1 FROM babies WHERE id = ? AND family = ? AND archived_at IS NULL`.
-  On mismatch → **403** (a family cannot touch another family's baby, nor an
-  archived/nonexistent one). The validated `babyId` is placed in `ctx`.
+  `SELECT 1 FROM babies WHERE id = ? AND family = ?`. On mismatch → **403** (a
+  family cannot touch a baby that isn't theirs, nor a nonexistent one). The
+  validated `babyId` is placed in `ctx`. **Archived babies still pass
+  validation** — archiving is a switcher-visibility filter, not an access
+  revocation, so a family can still view/un-archive an archived baby's data.
 - Family-scoped queries ignore `X-Baby-Id` and use `ctx.family` only.
 
 ### Client changes
@@ -172,8 +174,9 @@ The implementation plan will pick the concrete mechanism.
 - Switching updates the **active-baby context** (persisted in `localStorage`
   per device) and triggers a data reload. All screens read from the context.
 - **Manage babies** — a section (in the drawer and/or Settings) to add a baby
-  (name + DOB), rename, edit DOB, and archive. Archived babies leave the
-  switcher but retain their data.
+  (name + DOB), rename, edit DOB, and archive. Archived babies leave the default
+  switcher but retain their data; a "show archived" affordance lets you reach
+  them (to view history or un-archive).
 - **Empty family** — if the signed-in family has zero babies (new family's first
   login, or after archiving all), route to an "Add your first baby" screen
   before Home.
@@ -214,6 +217,11 @@ The implementation plan will pick the concrete mechanism.
   caches key off the active baby.
 - Ensure `active_timer` PK migration preserves the currently-running timer for
   the legacy baby.
+- **Running timers are per-baby.** A timer started on baby A disappears from the
+  `TimerBanner` when you switch to baby B, risking a forgotten running timer
+  (real for twins). v1 keeps timers per-baby (the banner shows only the active
+  baby's); a cross-baby "another baby has a running timer" indicator is a
+  possible fast-follow, noted here so it isn't lost.
 
 ## Success criteria
 

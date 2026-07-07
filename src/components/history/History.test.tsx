@@ -22,14 +22,34 @@ const mk = (over = {}) => ({
 })
 
 describe('History', () => {
-  it('lists all entries and filters by type', async () => {
+  it('lists all entries and filters by type via icon chips', async () => {
     await insertEntry(exec, mk())
     await insertEntry(exec, mk({ type: 'diaper', side: null, diaper_kind: 'wet' }))
     render(<History onEdit={() => {}} />, { wrapper })
     await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
-    await userEvent.selectOptions(screen.getByLabelText(/filter/i), 'diaper')
+
+    // Selecting the diaper chip narrows the list to diaper entries.
+    await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
     await waitFor(() => expect(screen.queryByText(/Breast/)).not.toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
+
+    // Chips are multi-select: adding breast shows both types again.
+    await userEvent.click(screen.getByRole('button', { name: 'breast' }))
+    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    expect(screen.getByText(/Diaper/)).toBeInTheDocument()
+
+    // Deselecting a chip removes it from the filter.
+    await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
+    await waitFor(() => expect(screen.queryByText(/Diaper/)).not.toBeInTheDocument())
+    expect(screen.getByText(/Breast/)).toBeInTheDocument()
+  })
+
+  it('shows a filter-specific empty message when nothing matches', async () => {
+    await insertEntry(exec, mk())
+    render(<History onEdit={() => {}} />, { wrapper })
+    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
+    await waitFor(() => expect(screen.getByText(/no entries match/i)).toBeInTheDocument())
   })
 })

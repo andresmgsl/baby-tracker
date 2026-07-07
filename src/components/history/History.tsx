@@ -3,9 +3,8 @@ import { useDb } from '../../db/client'
 import { listEntries } from '../../db/queries'
 import type { Entry, EntryType } from '../../db/types'
 import { entryLabel } from '../home/entryLabel'
+import { TimelineFilter, filterEntries } from '../home/TimelineFilter'
 import { formatClock } from '../../lib/time'
-
-const FILTERS: ('all' | EntryType)[] = ['all', 'breast', 'bottle', 'solids', 'sleep', 'diaper', 'meds', 'note']
 
 function dayKey(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
@@ -13,32 +12,39 @@ function dayKey(ts: number): string {
 
 export function History({ onEdit }: { onEdit: (e: Entry) => void }) {
   const db = useDb()
-  const [filter, setFilter] = useState<'all' | EntryType>('all')
+  const [selected, setSelected] = useState<Set<EntryType>>(new Set())
   const [rows, setRows] = useState<Entry[]>([])
 
   useEffect(() => {
-    void (async () => setRows(await listEntries(db, filter === 'all' ? {} : { type: filter })))()
-  }, [db, filter])
+    void (async () => setRows(await listEntries(db, {})))()
+  }, [db])
+
+  function toggle(t: EntryType) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(t)) next.delete(t)
+      else next.add(t)
+      return next
+    })
+  }
 
   const groups = useMemo(() => {
     const map = new Map<string, Entry[]>()
-    for (const e of rows) {
+    for (const e of filterEntries(rows, selected)) {
       const k = dayKey(e.start_ts)
       if (!map.has(k)) map.set(k, [])
       map.get(k)!.push(e)
     }
     return [...map.entries()]
-  }, [rows])
+  }, [rows, selected])
 
   return (
     <div>
-      <label className="filter-row">
-        <span className="sectlbl">Filter</span>
-        <select aria-label="filter" value={filter} onChange={(e) => setFilter(e.target.value as 'all' | EntryType)}>
-          {FILTERS.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
-      </label>
-      {groups.length === 0 && <p className="muted">No entries.</p>}
+      <div className="sectlbl">Filter</div>
+      <TimelineFilter selected={selected} onToggle={toggle} />
+      {groups.length === 0 && (
+        <p className="muted">{selected.size > 0 ? 'No entries match this filter.' : 'No entries.'}</p>
+      )}
       {groups.map(([day, items]) => (
         <div key={day}>
           <div className="sectlbl">{day}</div>

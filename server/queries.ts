@@ -183,6 +183,12 @@ export const QUERIES: Record<string, QueryDef> = {
       return []
     },
   },
+  getBreastLastSide: {
+    scope: 'baby',
+    run(db, ctx) {
+      return db.run("SELECT value FROM settings WHERE scope = ? AND key = 'breast_last_side'", [`baby:${ctx.babyId}`])
+    },
+  },
   pauseBreastSide: {
     scope: 'baby',
     run(db, ctx, { now: t }) {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useDb } from '../../db/client'
 import { useActiveTimer } from '../../state/useActiveTimer'
 import {
-  insertEntry, clearTimer, setTimerStart, getSetting,
+  insertEntry, clearTimer, setTimerStart, getBreastLastSide,
   startBreastSide, pauseBreastSide,
 } from '../../db/queries'
 import { formatElapsed, clampStartTs } from '../../lib/timer'
@@ -50,7 +50,7 @@ export function BreastSession({ syncSignal, onClose, onCommitted }: BreastSessio
 
   // Last-used side for the badge (only meaningful before this session accrues time).
   useEffect(() => {
-    void getSetting(db, 'breast_last_side').then((v) => setLastSide(v === 'R' ? 'R' : v === 'L' ? 'L' : null))
+    void getBreastLastSide(db).then(setLastSide)
   }, [db, syncSignal])
 
   // Detect the other caregiver ending the session out from under us.

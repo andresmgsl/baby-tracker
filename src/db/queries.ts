@@ -66,6 +66,11 @@ export async function resumeTimer(db: Api, type: ActiveTimer['type'], now: numbe
 export async function startBreastSide(db: Api, side: 'L' | 'R', now: number): Promise<void> {
   await db.q('startBreastSide', { side, now })
 }
+export async function getBreastLastSide(db: Api): Promise<'L' | 'R' | null> {
+  const rows = await db.q<Row[]>('getBreastLastSide', {})
+  const v = rows[0]?.value
+  return v === 'R' ? 'R' : v === 'L' ? 'L' : null
+}
 export async function pauseBreastSide(db: Api, now: number): Promise<void> {
   await db.q('pauseBreastSide', { now })
 }

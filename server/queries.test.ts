@@ -79,6 +79,14 @@ test('startBreastSide records per-baby last side', () => {
   expect(row[0].value).toBe('R')
 })
 
+test('getBreastLastSide reads the baby-scoped last side, isolated per baby', () => {
+  const { qdb, ctx, babyId } = harness()
+  QUERIES.startBreastSide.run(qdb, ctx, { side: 'R', now: 500 })
+  expect(QUERIES.getBreastLastSide.run(qdb, ctx, {})).toEqual([{ value: 'R' }])
+  // A different baby (even in the same family) sees no row.
+  expect(QUERIES.getBreastLastSide.run(qdb, { ...ctx, babyId: babyId + 1 }, {})).toHaveLength(0)
+})
+
 test('latestChangeMarker reflects only this baby', () => {
   const { qdb, ctx, babyId } = harness()
   QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })

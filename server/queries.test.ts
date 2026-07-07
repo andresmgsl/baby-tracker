@@ -36,3 +36,20 @@ test('updateEntry/deleteEntry cannot touch another baby row', () => {
   QUERIES.deleteEntry.run(qdb, { family: 'lopez', babyId: babyId + 1 }, { id })
   expect(QUERIES.listEntries.run(qdb, ctx, {})).toHaveLength(1)
 })
+
+test('measurements are baby-scoped', () => {
+  const { qdb, ctx, babyId } = harness()
+  QUERIES.insertMeasurement.run(qdb, ctx, { type: 'weight', ts: 1, value: 4.2, note: null })
+  QUERIES.insertMeasurement.run(qdb, { ...ctx, babyId: babyId + 1 }, { type: 'weight', ts: 2, value: 9, note: null })
+  const rows = QUERIES.listMeasurements.run(qdb, ctx, { type: 'weight' })
+  expect(rows).toHaveLength(1)
+  expect(rows[0].value).toBe(4.2)
+})
+
+test('settings are family-scoped', () => {
+  const { qdb, ctx } = harness()
+  QUERIES.setSetting.run(qdb, ctx, { key: 'units', value: 'oz' })
+  expect(QUERIES.getSetting.run(qdb, ctx, { key: 'units' })[0].value).toBe('oz')
+  // A different family sees nothing.
+  expect(QUERIES.getSetting.run(qdb, { family: 'nunez', babyId: -1 }, { key: 'units' })).toHaveLength(0)
+})

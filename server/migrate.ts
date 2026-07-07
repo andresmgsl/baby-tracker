@@ -9,9 +9,10 @@ import type Database from 'better-sqlite3'
  */
 export function migrateToFamilies(db: Database.Database, legacyFamily: string): void {
   const hasLegacySettings = tableExists(db, 'settings_legacy')
-  const orphanRows = (db.prepare(
-    "SELECT COUNT(*) c FROM entries WHERE baby_id IS NULL",
-  ).get() as { c: number }).c
+  // Count NULL-baby_id rows across ALL data tables — not just entries. A legacy DB can have
+  // orphaned rows only in measurements or photos (e.g. no logged entries); missing those would
+  // strand them forever, since nothing re-triggers this migration on a later open.
+  const orphanRows = orphanDataRows(db)
   const orphanTimer = tableExists(db, 'active_timer_legacy')
   if (!hasLegacySettings && orphanRows === 0 && !orphanTimer) return // nothing to migrate
 
@@ -69,6 +70,14 @@ export function migrateToFamilies(db: Database.Database, legacyFamily: string): 
 
 function tableExists(db: Database.Database, name: string): boolean {
   return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name)
+}
+
+function orphanDataRows(db: Database.Database): number {
+  let total = 0
+  for (const t of ['entries', 'measurements', 'photos']) {
+    total += (db.prepare(`SELECT COUNT(*) c FROM ${t} WHERE baby_id IS NULL`).get() as { c: number }).c
+  }
+  return total
 }
 
 function firstTimestamp(db: Database.Database): number {

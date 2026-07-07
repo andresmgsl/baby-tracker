@@ -56,6 +56,30 @@ test('migration creates legacy baby and backfills everything', () => {
   expect((db.prepare('SELECT COUNT(*) c FROM babies').get() as any).c).toBe(1)
 })
 
+test('migration backfills a measurements-only legacy DB (no entries/settings/timer)', () => {
+  // A legacy DB whose only orphaned data is a measurement — no entries, no settings_legacy,
+  // no active_timer_legacy. The guard must still fire so the row is not stranded forever.
+  const db = new Database(':memory:')
+  db.exec(`
+    CREATE TABLE entries (id INTEGER PRIMARY KEY AUTOINCREMENT, baby_id INTEGER, type TEXT NOT NULL,
+      start_ts INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+    CREATE TABLE measurements (id INTEGER PRIMARY KEY AUTOINCREMENT, baby_id INTEGER, type TEXT NOT NULL,
+      ts INTEGER NOT NULL, value REAL NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+    CREATE TABLE photos (id INTEGER PRIMARY KEY AUTOINCREMENT, baby_id INTEGER, blob BLOB NOT NULL, mime TEXT NOT NULL, created_at INTEGER NOT NULL);
+    CREATE TABLE settings (scope TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(scope,key));
+    CREATE TABLE babies (id INTEGER PRIMARY KEY AUTOINCREMENT, family TEXT NOT NULL, name TEXT NOT NULL,
+      dob INTEGER, archived_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+    INSERT INTO measurements (type, ts, value, created_at, updated_at) VALUES ('weight', 3000, 4.5, 1, 1);
+  `)
+
+  migrateToFamilies(db, 'lopez')
+
+  const baby = db.prepare('SELECT * FROM babies').get() as any
+  expect(baby.family).toBe('lopez')
+  expect((db.prepare('SELECT baby_id FROM measurements').get() as any).baby_id).toBe(baby.id)
+  expect((db.prepare('SELECT COUNT(*) c FROM babies').get() as any).c).toBe(1)
+})
+
 test('migration with no legacy data creates no baby', () => {
   const store = openStore(':memory:') // fresh, no settings_legacy
   // openStore already ran migrateToFamilies internally (see Task 3 Step 3); assert empty.

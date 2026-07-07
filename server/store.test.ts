@@ -86,7 +86,7 @@ describe('openStore migration', () => {
     store.close()
   })
 
-  it('adds baby_id to a pre-existing measurements table and preserves rows', () => {
+  it('adds baby_id to a pre-existing measurements table and backfills the row onto the legacy baby', () => {
     const path = tempPath()
     const old = new Database(path)
     old.exec(`CREATE TABLE measurements (
@@ -99,13 +99,18 @@ describe('openStore migration', () => {
     const store = openStore(path)
     const cols = store.exec('PRAGMA table_info(measurements)').map((c) => c.name)
     expect(cols).toContain('baby_id')
+    // A measurements-only legacy DB (no entries, no settings_legacy, no active_timer_legacy)
+    // must still trigger migrateToFamilies: the orphan row gets backfilled onto a created baby.
+    const [baby] = store.exec('SELECT id FROM babies')
+    expect(baby.id).not.toBeNull()
     const [row] = store.exec('SELECT * FROM measurements')
     expect(row.ts).toBe(3000)
-    expect(row.baby_id).toBeNull()
+    expect(row.value).toBe(4.5)
+    expect(row.baby_id).toBe(baby.id)
     store.close()
   })
 
-  it('adds baby_id to a pre-existing photos table and preserves rows', () => {
+  it('adds baby_id to a pre-existing photos table and backfills the row onto the legacy baby', () => {
     const path = tempPath()
     const old = new Database(path)
     old.exec(`CREATE TABLE photos (
@@ -116,9 +121,12 @@ describe('openStore migration', () => {
     const store = openStore(path)
     const cols = store.exec('PRAGMA table_info(photos)').map((c) => c.name)
     expect(cols).toContain('baby_id')
+    // A photos-only legacy DB must also trigger the migration and backfill the orphan row.
+    const [baby] = store.exec('SELECT id FROM babies')
+    expect(baby.id).not.toBeNull()
     const [row] = store.exec('SELECT * FROM photos')
     expect(row.mime).toBe('image/png')
-    expect(row.baby_id).toBeNull()
+    expect(row.baby_id).toBe(baby.id)
     store.close()
   })
 

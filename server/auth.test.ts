@@ -21,9 +21,9 @@ describe('password hashing', () => {
 
 describe('parseUsers', () => {
   it('parses multiple users with hash values containing $', () => {
-    const users = parseUsers('alice:scrypt$AAAA$BBBB,bob:scrypt$CCCC$DDDD')
-    expect(users.get('alice')).toBe('scrypt$AAAA$BBBB')
-    expect(users.get('bob')).toBe('scrypt$CCCC$DDDD')
+    const users = parseUsers('alice:family=fam1:scrypt$AAAA$BBBB,bob:family=fam2:scrypt$CCCC$DDDD')
+    expect(users.get('alice')).toEqual({ family: 'fam1', hash: 'scrypt$AAAA$BBBB' })
+    expect(users.get('bob')).toEqual({ family: 'fam2', hash: 'scrypt$CCCC$DDDD' })
     expect(users.size).toBe(2)
   })
   it('returns empty map for undefined/blank', () => {
@@ -56,6 +56,23 @@ describe('session token', () => {
     expect(verifySession(undefined, secret)).toBeNull()
     expect(verifySession('nodot', secret)).toBeNull()
   })
+})
+
+test('parseUsers extracts family tag and hash', () => {
+  const raw = 'andres:family=lopez:scrypt$c2FsdA==$aGFzaA==,mara:family=nunez:scrypt$c2E=$aA=='
+  const users = parseUsers(raw)
+  expect(users.get('andres')).toEqual({ family: 'lopez', hash: 'scrypt$c2FsdA==$aGFzaA==' })
+  expect(users.get('mara')).toEqual({ family: 'nunez', hash: 'scrypt$c2E=$aA==' })
+})
+
+test('parseUsers skips entries without a family tag', () => {
+  const users = parseUsers('legacy:scrypt$c2E=$aA==')
+  expect(users.has('legacy')).toBe(false)
+})
+
+test('parseUsers handles empty / undefined', () => {
+  expect(parseUsers(undefined).size).toBe(0)
+  expect(parseUsers('').size).toBe(0)
 })
 
 describe('parseCookies', () => {

@@ -11,7 +11,7 @@ let base: string
 
 beforeAll(async () => {
   const store = openStore(':memory:')
-  const users = new Map([['alice', hashPassword('pw123')]])
+  const users = new Map([['alice', { family: 'testfam', hash: hashPassword('pw123') }]])
   server = createServer({ store, users, secret: 'itsasecret' })
   await new Promise<void>((r) => server.listen(0, r))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`

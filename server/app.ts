@@ -59,6 +59,11 @@ export function createHandler(config: AppConfig) {
   const userOf = (req: IncomingMessage): string | null =>
     verifySession(parseCookies(req.headers.cookie)[COOKIE], secret)
 
+  const familyOf = (req: IncomingMessage): string | null => {
+    const user = userOf(req)
+    return user ? users.get(user)?.family ?? null : null
+  }
+
   return async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = (req.url ?? '/').split('?')[0]
     const method = req.method ?? 'GET'
@@ -67,8 +72,8 @@ export function createHandler(config: AppConfig) {
       // ---- auth endpoints ----
       if (url === '/api/login' && method === 'POST') {
         const { username, password } = JSON.parse((await readBody(req)).toString() || '{}')
-        const stored = typeof username === 'string' ? users.get(username) : undefined
-        if (!stored || typeof password !== 'string' || !verifyPassword(password, stored)) {
+        const record = typeof username === 'string' ? users.get(username) : undefined
+        if (!record || typeof password !== 'string' || !verifyPassword(password, record.hash)) {
           return send(res, 401, { error: 'Invalid username or password.' })
         }
         const token = signSession(username, secret, SESSION_TTL_MS)

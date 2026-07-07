@@ -10,7 +10,10 @@ installs to the home screen.
 - **Quick logging** — one tap to record breast/bottle feeds, sleep, diapers,
   solids, meds, temperature, measurements, and free-text notes.
 - **Live timers** — running timers for breastfeeding and sleep, resumed across reloads.
-- **Today view** — a running timeline plus daily totals (feeds, nappies, sleep).
+- **Home timeline** — the last 3 days grouped by day (Today / Yesterday / date),
+  plus today-only totals (feeds, nappies, sleep).
+- **Filter chips** — tap activity-type icons to narrow the Home timeline (multi-select;
+  none selected shows everything); "See all →" jumps to the full History archive.
 - **History** — browse and edit past entries.
 - **Growth** — weight/height/head-circumference measurements charted over time.
 - **Shared data** — one database on the server; both accounts see the same entries.

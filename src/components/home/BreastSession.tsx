@@ -132,7 +132,7 @@ export function BreastSession({ syncSignal, onClose, onCommitted }: BreastSessio
       <p className="breast-tag">#liquidgold</p>
 
       {!manual && (
-        <>
+        <div className="breast-body">
           <div className="sleep-duration">{formatElapsed(totals.total)}</div>
           <div className="sleep-duration-label">Feed duration</div>
 
@@ -183,7 +183,7 @@ export function BreastSession({ syncSignal, onClose, onCommitted }: BreastSessio
             <button className="btn-ghost" onClick={running ? cancel : onClose}>Cancel</button>
             <button className="btn-primary" onClick={save}>Save</button>
           </div>
-        </>
+        </div>
       )}
 
       {manual && (

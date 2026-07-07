@@ -15,7 +15,7 @@ export function TimerBanner({
           <i className="pulse" />
           {timer.type === 'breast' ? `Breast · ${timer.side}` : 'Sleep'}
         </span>
-        <span className="tb-stop">Tap to stop</span>
+        <span className="tb-stop">Tap to open</span>
       </span>
       <span className="tb-time">{formatElapsed(elapsed)}</span>
     </button>

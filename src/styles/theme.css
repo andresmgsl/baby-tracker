@@ -609,6 +609,36 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
   justify-content: center; gap: 18px; text-align: center;
 }
 
+/* ---------- breast session page ---------- */
+.breast-page { padding: 16px; min-height: 100%; }
+.breast-tag {
+  text-align: center; color: var(--muted); margin: 2px 0 12px;
+  font: 700 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em;
+}
+.breast-sides { display: flex; justify-content: center; gap: 40px; margin: 12px 0 4px; }
+.breast-col { display: flex; flex-direction: column; align-items: center; position: relative; }
+.breast-circle {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: var(--panel); color: var(--c-breast);
+  border: var(--bw-heavy) solid var(--c-breast);
+  font: 700 44px var(--font-mono);
+  box-shadow: var(--shadow);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.breast-circle:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.breast-circle.active { background: var(--c-breast); color: var(--panel); }
+.breast-side-time {
+  margin-top: 8px; font: 700 15px var(--font-mono); color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+.breast-last {
+  position: absolute; top: -10px; z-index: 1;
+  background: var(--yellow); color: var(--ink);
+  border: var(--bw) solid var(--ink); border-radius: 999px; padding: 2px 12px;
+  font: 700 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.breast-hint { text-align: center; color: var(--muted); margin: 16px 0; font: 500 13px var(--font-sans); }
+
 /* ---------- install affordances ---------- */
 .install-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;

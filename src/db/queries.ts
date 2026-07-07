@@ -3,21 +3,23 @@ import type {
   Entry, EntryType, Measurement, MeasurementType, ActiveTimer,
 } from './types'
 
-export type NewEntry = Omit<Entry, 'id' | 'created_at' | 'updated_at'>
+export type NewEntry =
+  Omit<Entry, 'id' | 'created_at' | 'updated_at' | 'left_ms' | 'right_ms'>
+  & { left_ms?: number | null; right_ms?: number | null }
 export type NewMeasurement = Omit<Measurement, 'id' | 'created_at' | 'updated_at'>
 
 const now = () => Date.now()
 
 const ENTRY_COLS = [
   'type', 'start_ts', 'end_ts', 'side', 'amount_ml', 'milk_type', 'food',
-  'diaper_kind', 'med_name', 'med_dose', 'note', 'photo_id',
+  'diaper_kind', 'med_name', 'med_dose', 'note', 'photo_id', 'left_ms', 'right_ms',
 ] as const
 
 export async function insertEntry(exec: SqlExecutor, data: NewEntry): Promise<number> {
   const ts = now()
   const cols = [...ENTRY_COLS, 'created_at', 'updated_at']
   const placeholders = cols.map(() => '?').join(', ')
-  const values = [...ENTRY_COLS.map((c) => data[c]), ts, ts]
+  const values = [...ENTRY_COLS.map((c) => data[c] ?? null), ts, ts]
   const rows = await exec.exec(
     `INSERT INTO entries (${cols.join(', ')}) VALUES (${placeholders}) RETURNING id`,
     values,
@@ -114,8 +116,10 @@ export async function startTimer(
   t: { type: ActiveTimer['type']; start_ts: number; side: ActiveTimer['side'] },
 ): Promise<void> {
   await exec.exec(
-    `INSERT INTO active_timer (type, start_ts, side, paused_ms, paused_at) VALUES (?, ?, ?, 0, NULL)
-     ON CONFLICT(type) DO UPDATE SET start_ts = excluded.start_ts, side = excluded.side, paused_ms = 0, paused_at = NULL`,
+    `INSERT INTO active_timer (type, start_ts, side, paused_ms, paused_at, left_ms, right_ms, running_since)
+     VALUES (?, ?, ?, 0, NULL, 0, 0, NULL)
+     ON CONFLICT(type) DO UPDATE SET start_ts = excluded.start_ts, side = excluded.side,
+       paused_ms = 0, paused_at = NULL, left_ms = 0, right_ms = 0, running_since = NULL`,
     [t.type, t.start_ts, t.side],
   )
 }
@@ -135,6 +139,51 @@ export async function resumeTimer(exec: SqlExecutor, type: ActiveTimer['type'], 
   )
 }
 
+export async function startBreastSide(
+  exec: SqlExecutor, side: 'L' | 'R', now: number,
+): Promise<void> {
+  const rows = await exec.exec(
+    'SELECT side, running_since FROM active_timer WHERE type = ?', ['breast'],
+  )
+  if (!rows.length) {
+    await exec.exec(
+      `INSERT INTO active_timer (type, start_ts, side, paused_ms, paused_at, left_ms, right_ms, running_since)
+       VALUES ('breast', ?, ?, 0, NULL, 0, 0, ?)`,
+      [now, side, now],
+    )
+  } else {
+    const curSide = rows[0].side as 'L' | 'R' | null
+    const runningSince = rows[0].running_since as number | null
+    if (curSide && runningSince != null) {
+      const col = curSide === 'L' ? 'left_ms' : 'right_ms'
+      await exec.exec(
+        `UPDATE active_timer SET ${col} = ${col} + (? - running_since) WHERE type = 'breast'`,
+        [now],
+      )
+    }
+    await exec.exec(
+      `UPDATE active_timer SET side = ?, running_since = ? WHERE type = 'breast'`,
+      [side, now],
+    )
+  }
+  await setSetting(exec, 'breast_last_side', side)
+}
+
+export async function pauseBreastSide(exec: SqlExecutor, now: number): Promise<void> {
+  const rows = await exec.exec(
+    'SELECT side, running_since FROM active_timer WHERE type = ?', ['breast'],
+  )
+  if (!rows.length) return
+  const curSide = rows[0].side as 'L' | 'R' | null
+  const runningSince = rows[0].running_since as number | null
+  if (!curSide || runningSince == null) return
+  const col = curSide === 'L' ? 'left_ms' : 'right_ms'
+  await exec.exec(
+    `UPDATE active_timer SET ${col} = ${col} + (? - running_since), side = NULL, running_since = NULL WHERE type = 'breast'`,
+    [now],
+  )
+}
+
 export async function getActiveTimer(exec: SqlExecutor): Promise<ActiveTimer | null> {
   const rows = await exec.exec('SELECT * FROM active_timer LIMIT 1')
   if (!rows.length) return null
@@ -145,6 +194,9 @@ export async function getActiveTimer(exec: SqlExecutor): Promise<ActiveTimer | n
     side: r.side as ActiveTimer['side'],
     paused_ms: (r.paused_ms as number) ?? 0,
     paused_at: (r.paused_at as number | null) ?? null,
+    left_ms: (r.left_ms as number) ?? 0,
+    right_ms: (r.right_ms as number) ?? 0,
+    running_since: (r.running_since as number | null) ?? null,
   }
 }
 

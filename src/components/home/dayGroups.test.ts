@@ -7,7 +7,7 @@ const DAY = 86_400_000
 const base: Omit<Entry, 'id' | 'start_ts'> = {
   type: 'note', end_ts: null, side: null, amount_ml: null, milk_type: null,
   food: null, diaper_kind: null, med_name: null, med_dose: null, note: 'x',
-  photo_id: null, created_at: 0, updated_at: 0,
+  photo_id: null, left_ms: null, right_ms: null, created_at: 0, updated_at: 0,
 }
 const entry = (id: number, start_ts: number): Entry => ({ ...base, id, start_ts })
 

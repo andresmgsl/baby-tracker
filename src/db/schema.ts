@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS entries (
   med_dose TEXT,
   note TEXT,
   photo_id INTEGER,
+  left_ms INTEGER,
+  right_ms INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
@@ -46,6 +48,9 @@ CREATE TABLE IF NOT EXISTS active_timer (
   start_ts INTEGER NOT NULL,
   side TEXT,
   paused_ms INTEGER NOT NULL DEFAULT 0,
-  paused_at INTEGER
+  paused_at INTEGER,
+  left_ms INTEGER NOT NULL DEFAULT 0,
+  right_ms INTEGER NOT NULL DEFAULT 0,
+  running_since INTEGER
 );
 `

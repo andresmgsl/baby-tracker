@@ -162,8 +162,10 @@ Mirrors `SleepSession.tsx` structure and props
 - `entryLabel.ts` breast case: show per-side, e.g. `🤱 Breast · L 5m / R 3m`, or
   `Breast · L · 5m` when only one side was used. Falls back to the existing
   `Breast · <side> · <dur>` for legacy rows with null `left_ms`/`right_ms`.
-- `EditEntrySheet`: edit breast per-side minutes (side re-derived); display the
-  breakdown. Legacy rows without per-side data keep the single-duration edit.
+- `EditEntrySheet`: stays generic (edits start / end / note, as it does for every type
+  today) and shows the per-side breakdown read-only in its title via `entryLabel`.
+  Per-side field editing is deferred — no entry type has custom edit fields today, and
+  adding one only for breast would break that shared pattern.
 - `computeDailyTotals`: unaffected — a breast entry still counts as one feed.
 
 ## Styling
@@ -186,5 +188,6 @@ the big total, and the same button row as Sleep.
 ## Out of scope
 
 - Simultaneous both-sides timing (design is one side at a time).
+- Per-side editing in the edit sheet (edit stays generic: start / end / note).
 - Changing bottle/solids feed flows.
 - Reworking the Sleep page.

@@ -34,16 +34,28 @@ export function parseUsers(raw: string | undefined): Users {
     const trimmed = entry.trim()
     if (!trimmed) continue
     const nameIdx = trimmed.indexOf(':')
-    if (nameIdx <= 0) continue
+    if (nameIdx <= 0) {
+      console.warn(`BT_USERS: skipping malformed entry: "${trimmed.slice(0, 12)}"`)
+      continue
+    }
     const name = trimmed.slice(0, nameIdx)
     const rest = trimmed.slice(nameIdx + 1)
-    if (!rest.startsWith('family=')) continue
+    if (!rest.startsWith('family=')) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
     const afterTag = rest.slice('family='.length)
     const famIdx = afterTag.indexOf(':')
-    if (famIdx <= 0) continue
+    if (famIdx <= 0) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
     const family = afterTag.slice(0, famIdx)
     const hash = afterTag.slice(famIdx + 1)
-    if (!hash) continue
+    if (!hash) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
     users.set(name, { family, hash })
   }
   return users

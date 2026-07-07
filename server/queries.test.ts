@@ -46,6 +46,23 @@ test('updateEntry cannot reassign baby_id (allowlisted patch columns)', () => {
   expect(row.note).toBe('x') // legit column still applies
 })
 
+test('listEntries respects a numeric limit', () => {
+  const { qdb, ctx } = harness()
+  QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })
+  QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 20 })
+  QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 30 })
+  const rows = QUERIES.listEntries.run(qdb, ctx, { limit: 2 })
+  expect(rows).toHaveLength(2)
+  expect(rows[0].start_ts).toBe(30) // most recent first
+})
+
+test('listEntries ignores a non-numeric limit instead of erroring', () => {
+  const { qdb, ctx } = harness()
+  QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })
+  expect(() => QUERIES.listEntries.run(qdb, ctx, { limit: 'nope' })).not.toThrow()
+  expect(QUERIES.listEntries.run(qdb, ctx, { limit: 'nope' })).toHaveLength(1)
+})
+
 test('measurements are baby-scoped', () => {
   const { qdb, ctx, babyId } = harness()
   QUERIES.insertMeasurement.run(qdb, ctx, { type: 'weight', ts: 1, value: 4.2, note: null })

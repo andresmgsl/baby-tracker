@@ -30,10 +30,13 @@ export const QUERIES: Record<string, QueryDef> = {
     scope: 'baby',
     run(db, ctx, opts) {
       const typeClause = opts.type ? 'AND type = ?' : ''
-      const limit = opts.limit ? `LIMIT ${Number(opts.limit)}` : ''
+      const limitValue = Number(opts.limit)
+      const hasLimit = Boolean(opts.limit) && Number.isInteger(limitValue)
+      const limitClause = hasLimit ? 'LIMIT ?' : ''
       const params = opts.type ? [ctx.babyId, opts.type] : [ctx.babyId]
+      if (hasLimit) params.push(limitValue)
       return db.run(
-        `SELECT * FROM entries WHERE baby_id = ? ${typeClause} ORDER BY start_ts DESC ${limit}`,
+        `SELECT * FROM entries WHERE baby_id = ? ${typeClause} ORDER BY start_ts DESC ${limitClause}`,
         params,
       )
     },

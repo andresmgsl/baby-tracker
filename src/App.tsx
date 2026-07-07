@@ -11,6 +11,8 @@ import { EditEntrySheet } from './components/history/EditEntrySheet'
 import { Settings } from './components/settings/Settings'
 import type { Entry } from './db/types'
 import { useLiveSync } from './state/useLiveSync'
+import { useActiveBaby } from './state/ActiveBabyContext'
+import { FirstBabyScreen } from './components/babies/FirstBabyScreen'
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
@@ -19,8 +21,11 @@ export default function App() {
   const [editing, setEditing] = useState<Entry | null>(null)
   const [sleepOpen, setSleepOpen] = useState(false)
   const [breastOpen, setBreastOpen] = useState(false)
+  const { active, loading: babyLoading } = useActiveBaby()
   const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
   useLiveSync(() => setRefreshKey((k) => k + 1))
+  if (babyLoading) return <div className="app" />
+  if (!active) return <div className="app"><FirstBabyScreen /></div>
   return (
     <div className="app">
       <header className="masthead">

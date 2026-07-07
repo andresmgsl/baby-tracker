@@ -6,6 +6,7 @@ import {
   insertMeasurement, listMeasurements, deleteMeasurement,
   getSetting, setSetting, startTimer, getActiveTimer, clearTimer, lastEntryByType,
   latestChangeMarker, setTimerStart, pauseTimer, resumeTimer,
+  startBreastSide, pauseBreastSide,
 } from './queries'
 
 let db: SqlExecutor
@@ -148,6 +149,62 @@ describe('active timer', () => {
     expect(t?.start_ts).toBe(2000)
     expect(t?.side).toBe('L')
     expect(t?.paused_at).toBe(5000)
+  })
+})
+
+describe('breast per-side timer', () => {
+  it('starts a side: inserts a running breast row and records last side', async () => {
+    const db = await makeTestExecutor()
+    await startBreastSide(db, 'L', 1000)
+    const t = (await getActiveTimer(db))!
+    expect(t.type).toBe('breast')
+    expect(t.start_ts).toBe(1000)
+    expect(t.side).toBe('L')
+    expect(t.running_since).toBe(1000)
+    expect(t.left_ms).toBe(0)
+    expect(await getSetting(db, 'breast_last_side')).toBe('L')
+  })
+
+  it('switching sides commits the running side into its accumulator', async () => {
+    const db = await makeTestExecutor()
+    await startBreastSide(db, 'L', 1000)
+    await startBreastSide(db, 'R', 6000) // L ran 5000ms
+    const t = (await getActiveTimer(db))!
+    expect(t.left_ms).toBe(5000)
+    expect(t.side).toBe('R')
+    expect(t.running_since).toBe(6000)
+    expect(t.start_ts).toBe(1000) // session start unchanged
+    expect(await getSetting(db, 'breast_last_side')).toBe('R')
+  })
+
+  it('pausing commits the running side and clears running state', async () => {
+    const db = await makeTestExecutor()
+    await startBreastSide(db, 'R', 1000)
+    await pauseBreastSide(db, 4000) // R ran 3000ms
+    const t = (await getActiveTimer(db))!
+    expect(t.right_ms).toBe(3000)
+    expect(t.side).toBeNull()
+    expect(t.running_since).toBeNull()
+  })
+
+  it('pause is a no-op when nothing is running', async () => {
+    const db = await makeTestExecutor()
+    await startBreastSide(db, 'L', 1000)
+    await pauseBreastSide(db, 4000) // L -> 3000
+    await pauseBreastSide(db, 9000) // no side running; no change
+    const t = (await getActiveTimer(db))!
+    expect(t.left_ms).toBe(3000)
+  })
+
+  it('resuming after pause starts the tapped side without a new row', async () => {
+    const db = await makeTestExecutor()
+    await startBreastSide(db, 'L', 1000)
+    await pauseBreastSide(db, 4000)   // left_ms = 3000
+    await startBreastSide(db, 'L', 5000) // resume L
+    const t = (await getActiveTimer(db))!
+    expect(t.left_ms).toBe(3000)
+    expect(t.side).toBe('L')
+    expect(t.running_since).toBe(5000)
   })
 })
 

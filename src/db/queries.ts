@@ -139,6 +139,51 @@ export async function resumeTimer(exec: SqlExecutor, type: ActiveTimer['type'], 
   )
 }
 
+export async function startBreastSide(
+  exec: SqlExecutor, side: 'L' | 'R', now: number,
+): Promise<void> {
+  const rows = await exec.exec(
+    'SELECT side, running_since FROM active_timer WHERE type = ?', ['breast'],
+  )
+  if (!rows.length) {
+    await exec.exec(
+      `INSERT INTO active_timer (type, start_ts, side, paused_ms, paused_at, left_ms, right_ms, running_since)
+       VALUES ('breast', ?, ?, 0, NULL, 0, 0, ?)`,
+      [now, side, now],
+    )
+  } else {
+    const curSide = rows[0].side as 'L' | 'R' | null
+    const runningSince = rows[0].running_since as number | null
+    if (curSide && runningSince != null) {
+      const col = curSide === 'L' ? 'left_ms' : 'right_ms'
+      await exec.exec(
+        `UPDATE active_timer SET ${col} = ${col} + (? - running_since) WHERE type = 'breast'`,
+        [now],
+      )
+    }
+    await exec.exec(
+      `UPDATE active_timer SET side = ?, running_since = ? WHERE type = 'breast'`,
+      [side, now],
+    )
+  }
+  await setSetting(exec, 'breast_last_side', side)
+}
+
+export async function pauseBreastSide(exec: SqlExecutor, now: number): Promise<void> {
+  const rows = await exec.exec(
+    'SELECT side, running_since FROM active_timer WHERE type = ?', ['breast'],
+  )
+  if (!rows.length) return
+  const curSide = rows[0].side as 'L' | 'R' | null
+  const runningSince = rows[0].running_since as number | null
+  if (!curSide || runningSince == null) return
+  const col = curSide === 'L' ? 'left_ms' : 'right_ms'
+  await exec.exec(
+    `UPDATE active_timer SET ${col} = ${col} + (? - running_since), side = NULL, running_since = NULL WHERE type = 'breast'`,
+    [now],
+  )
+}
+
 export async function getActiveTimer(exec: SqlExecutor): Promise<ActiveTimer | null> {
   const rows = await exec.exec('SELECT * FROM active_timer LIMIT 1')
   if (!rows.length) return null

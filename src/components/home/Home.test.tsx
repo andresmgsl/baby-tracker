@@ -55,4 +55,17 @@ describe('Home', () => {
     await userEvent.click(await screen.findByRole('button', { name: /see all/i }))
     expect(onSeeAll).toHaveBeenCalled()
   })
+
+  it('distinguishes an empty filter from an empty window', async () => {
+    await insertEntry(exec, {
+      type: 'bottle', start_ts: Date.now(), end_ts: null, side: null, amount_ml: 90,
+      milk_type: 'formula', food: null, diaper_kind: null, med_name: null,
+      med_dose: null, note: null, photo_id: null,
+    })
+    render(<Home onLog={() => {}} onSelectEntry={() => {}} onOpenSleep={() => {}} onSeeAll={() => {}} />, { wrapper })
+    // filter to a type with no entries -> filter-specific message, not the window message
+    await userEvent.click(await screen.findByRole('button', { name: 'diaper' }))
+    expect(await screen.findByText('No entries match this filter.')).toBeInTheDocument()
+    expect(screen.queryByText('No entries in the last 3 days.')).not.toBeInTheDocument()
+  })
 })

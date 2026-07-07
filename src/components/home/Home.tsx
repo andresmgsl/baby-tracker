@@ -93,7 +93,11 @@ export function Home({
       <TotalsStrip totals={totals} />
       <div className="sectlbl">Timeline</div>
       <TimelineFilter selected={selected} onToggle={toggle} />
-      {groups.length === 0 && <p className="muted">No entries in the last 3 days.</p>}
+      {groups.length === 0 && (
+        <p className="muted">
+          {selected.size > 0 ? 'No entries match this filter.' : 'No entries in the last 3 days.'}
+        </p>
+      )}
       {groups.map((g) => (
         <div key={g.key}>
           <div className="daylbl">{g.label}</div>

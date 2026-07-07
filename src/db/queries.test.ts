@@ -98,7 +98,10 @@ describe('active timer', () => {
     expect(await getActiveTimer(db)).toBeNull()
     await startTimer(db, { type: 'breast', start_ts: 1234, side: 'R' })
     const t = await getActiveTimer(db)
-    expect(t).toEqual({ type: 'breast', start_ts: 1234, side: 'R', paused_ms: 0, paused_at: null })
+    expect(t).toEqual({
+      type: 'breast', start_ts: 1234, side: 'R', paused_ms: 0, paused_at: null,
+      left_ms: 0, right_ms: 0, running_since: null,
+    })
     await clearTimer(db, 'breast')
     expect(await getActiveTimer(db)).toBeNull()
   })

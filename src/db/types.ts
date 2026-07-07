@@ -18,6 +18,8 @@ export interface Entry {
   med_dose: string | null
   note: string | null
   photo_id: number | null
+  left_ms: number | null
+  right_ms: number | null
   created_at: number
   updated_at: number
 }
@@ -36,5 +38,8 @@ export interface ActiveTimer {
   side: Side | null
   paused_ms: number
   paused_at: number | null
+  left_ms: number
+  right_ms: number
+  running_since: number | null
 }
 export interface DailyTotals { feeds: number; diapers: number; sleepMs: number }

@@ -5,7 +5,7 @@ import type { Entry } from '../db/types'
 const base = {
   end_ts: null, side: null, amount_ml: null, milk_type: null, food: null,
   diaper_kind: null, med_name: null, med_dose: null, note: null, photo_id: null,
-  created_at: 0, updated_at: 0,
+  left_ms: null, right_ms: null, created_at: 0, updated_at: 0,
 }
 const entry = (id: number, type: Entry['type'], extra: Partial<Entry> = {}): Entry =>
   ({ id, type, start_ts: id * 1000, ...base, ...extra })

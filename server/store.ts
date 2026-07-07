@@ -20,6 +20,17 @@ function ensureActiveTimerColumns(db: Database.Database): void {
   )
   if (!names.has('paused_ms')) db.exec('ALTER TABLE active_timer ADD COLUMN paused_ms INTEGER NOT NULL DEFAULT 0')
   if (!names.has('paused_at')) db.exec('ALTER TABLE active_timer ADD COLUMN paused_at INTEGER')
+  if (!names.has('left_ms')) db.exec('ALTER TABLE active_timer ADD COLUMN left_ms INTEGER NOT NULL DEFAULT 0')
+  if (!names.has('right_ms')) db.exec('ALTER TABLE active_timer ADD COLUMN right_ms INTEGER NOT NULL DEFAULT 0')
+  if (!names.has('running_since')) db.exec('ALTER TABLE active_timer ADD COLUMN running_since INTEGER')
+}
+
+function ensureEntriesColumns(db: Database.Database): void {
+  const names = new Set(
+    (db.prepare('PRAGMA table_info(entries)').all() as { name: string }[]).map((c) => c.name),
+  )
+  if (!names.has('left_ms')) db.exec('ALTER TABLE entries ADD COLUMN left_ms INTEGER')
+  if (!names.has('right_ms')) db.exec('ALTER TABLE entries ADD COLUMN right_ms INTEGER')
 }
 
 export function openStore(dbPath: string): Store {
@@ -27,6 +38,7 @@ export function openStore(dbPath: string): Store {
   let db = new Database(dbPath)
   db.exec(SCHEMA_SQL)
   ensureActiveTimerColumns(db)
+  ensureEntriesColumns(db)
 
   const runOn = (d: Database.Database, sql: string, params: unknown[] = []): Row[] => {
     const stmt = d.prepare(sql)
@@ -58,6 +70,7 @@ export function openStore(dbPath: string): Store {
       }
       db.exec(SCHEMA_SQL)
       ensureActiveTimerColumns(db)
+      ensureEntriesColumns(db)
     },
     close: () => db.close(),
   }

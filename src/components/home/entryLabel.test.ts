@@ -4,7 +4,7 @@ import { entryLabel } from './entryLabel'
 const base = {
   id: 1, start_ts: 0, end_ts: null, side: null, amount_ml: null, milk_type: null,
   food: null, diaper_kind: null, med_name: null, med_dose: null, note: null,
-  photo_id: null, created_at: 0, updated_at: 0,
+  photo_id: null, left_ms: null, right_ms: null, created_at: 0, updated_at: 0,
 }
 
 describe('entryLabel', () => {

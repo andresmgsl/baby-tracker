@@ -519,6 +519,28 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
 .card-section .filter-row select { flex: 0 0 auto; min-width: 84px; }
 .card-section .btn-ghost { margin-top: 10px; }
 
+/* ---------- babies (settings) ---------- */
+.baby-row {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 0;
+  border-bottom: var(--bw) solid var(--line-dim);
+}
+.baby-row:first-of-type { padding-top: 0; }
+.baby-row-name {
+  margin: 0;
+  font: 900 15px var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--paper);
+}
+.baby-row .text-input, .baby-row .timefield { margin-bottom: 0; }
+.baby-row .btn-link { width: auto; align-self: flex-start; padding: 4px 0; }
+.baby-add {
+  display: flex; gap: 10px; align-items: stretch;
+  padding-top: 14px; margin-bottom: 6px;
+}
+.baby-add .text-input { flex: 1; margin-bottom: 0; }
+.baby-add .btn-primary { flex: 0 0 auto; padding: 12px 18px; }
+
 /* ---------- login ---------- */
 .login-screen {
   min-height: 100%;

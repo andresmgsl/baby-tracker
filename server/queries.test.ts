@@ -78,3 +78,17 @@ test('latestChangeMarker reflects only this baby', () => {
   expect(mine).toBeGreaterThan(0)
   expect(other).toBe(0)
 })
+
+test('babies are family-scoped and manageable', () => {
+  const { qdb, ctx } = harness() // harness already inserted one 'lopez' baby 'A'
+  const id = Number(QUERIES.addBaby.run(qdb, ctx, { name: 'B', dob: 123 })[0].id)
+  expect(QUERIES.listBabies.run(qdb, ctx, {}).map((b) => b.name).sort()).toEqual(['A', 'B'])
+  // Other family cannot see or rename lopez babies.
+  expect(QUERIES.listBabies.run(qdb, { family: 'nunez', babyId: -1 }, {})).toHaveLength(0)
+  QUERIES.renameBaby.run(qdb, { family: 'nunez', babyId: -1 }, { id, name: 'HACK' })
+  expect(QUERIES.listBabies.run(qdb, ctx, {}).find((b) => b.id === id)!.name).toBe('B')
+  // Archive hides from default list but includeArchived shows it.
+  QUERIES.archiveBaby.run(qdb, ctx, { id })
+  expect(QUERIES.listBabies.run(qdb, ctx, {}).map((b) => b.name)).toEqual(['A'])
+  expect(QUERIES.listBabies.run(qdb, ctx, { includeArchived: true })).toHaveLength(2)
+})

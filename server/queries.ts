@@ -221,4 +221,55 @@ export const QUERIES: Record<string, QueryDef> = {
       )
     },
   },
+  listBabies: {
+    scope: 'family',
+    run(db, ctx, { includeArchived } = {}) {
+      const where = includeArchived ? '' : 'AND archived_at IS NULL'
+      return db.run(
+        `SELECT * FROM babies WHERE family = ? ${where} ORDER BY archived_at IS NOT NULL, sort_order, created_at`,
+        [ctx.family],
+      )
+    },
+  },
+  addBaby: {
+    scope: 'family',
+    run(db, ctx, { name, dob }) {
+      const ts = now()
+      const next = db.run('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM babies WHERE family = ?', [ctx.family])
+      return db.run(
+        `INSERT INTO babies (family, name, dob, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+        [ctx.family, name, dob ?? null, next[0].n, ts, ts],
+      )
+    },
+  },
+  renameBaby: {
+    scope: 'family',
+    run(db, ctx, { id, name }) {
+      return db.run('UPDATE babies SET name = ?, updated_at = ? WHERE id = ? AND family = ?', [name, now(), id, ctx.family])
+    },
+  },
+  setBabyDob: {
+    scope: 'family',
+    run(db, ctx, { id, dob }) {
+      return db.run('UPDATE babies SET dob = ?, updated_at = ? WHERE id = ? AND family = ?', [dob ?? null, now(), id, ctx.family])
+    },
+  },
+  archiveBaby: {
+    scope: 'family',
+    run(db, ctx, { id }) {
+      return db.run('UPDATE babies SET archived_at = ?, updated_at = ? WHERE id = ? AND family = ?', [now(), now(), id, ctx.family])
+    },
+  },
+  unarchiveBaby: {
+    scope: 'family',
+    run(db, ctx, { id }) {
+      return db.run('UPDATE babies SET archived_at = NULL, updated_at = ? WHERE id = ? AND family = ?', [now(), id, ctx.family])
+    },
+  },
+}
+
+export interface Baby {
+  id: number; family: string; name: string; dob: number | null;
+  archived_at: number | null; sort_order: number; created_at: number; updated_at: number;
 }

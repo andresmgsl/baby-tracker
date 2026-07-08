@@ -69,7 +69,7 @@ describe('Home', () => {
   it('tapping the Breast quick-log button opens the breast page', async () => {
     const onOpenBreast = vi.fn()
     render(<Home onLog={() => {}} onSelectEntry={() => {}} onOpenSleep={() => {}} onOpenBreast={onOpenBreast} onSeeAll={() => {}} />, { wrapper })
-    await userEvent.click(await screen.findByText('Breast'))
+    await userEvent.click(await screen.findByText('Nursing'))
     expect(onOpenBreast).toHaveBeenCalled()
   })
 

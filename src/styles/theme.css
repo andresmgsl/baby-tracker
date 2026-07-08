@@ -538,8 +538,46 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
   display: flex; gap: 10px; align-items: stretch;
   padding-top: 14px; margin-bottom: 6px;
 }
-.baby-add .text-input { flex: 1; margin-bottom: 0; }
-.baby-add .btn-primary { flex: 0 0 auto; padding: 12px 18px; }
+.baby-add .text-input { flex: 1; min-width: 0; margin-bottom: 0; }
+/* Override the card-section full-width button so it sits inline next to the input. */
+.baby-add .btn-primary { flex: 0 0 auto; width: auto; display: inline-flex; align-items: center; padding: 0 20px; }
+
+.edit-duration {
+  margin: 2px 0 0; text-align: right;
+  font: 800 12px var(--font-mono); letter-spacing: 0.04em;
+  color: var(--muted); text-transform: uppercase;
+}
+
+/* ---------- first-baby onboarding ---------- */
+.first-baby {
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px 18px;
+}
+.first-baby-card {
+  width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--panel);
+  border: var(--bw-heavy) solid var(--ink); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 26px 22px;
+}
+.first-baby-kicker {
+  align-self: flex-start;
+  background: var(--yellow); color: var(--ink);
+  border: 2px solid var(--ink);
+  font: 900 11px var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 3px 9px;
+}
+.first-baby-card h2 {
+  margin: 0;
+  font-size: 26px; font-weight: 900; line-height: 1.05;
+  text-transform: uppercase; letter-spacing: 0.01em;
+}
+.first-baby-sub { margin: -4px 0 4px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.first-baby-card .text-input, .first-baby-card .timefield { margin-bottom: 0; }
+.first-baby-submit { width: 100%; margin-top: 4px; }
 
 /* ---------- login ---------- */
 .login-screen {

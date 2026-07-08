@@ -104,6 +104,16 @@ test('getBreastLastSide reads the baby-scoped last side, isolated per baby', () 
   expect(QUERIES.getBreastLastSide.run(qdb, { ...ctx, babyId: babyId + 1 }, {})).toHaveLength(0)
 })
 
+test('bumpBreastSide adds/removes accrued time on a side, clamped at 0', () => {
+  const { qdb, ctx } = harness()
+  QUERIES.startBreastSide.run(qdb, ctx, { side: 'L', now: 1000 })
+  QUERIES.pauseBreastSide.run(qdb, ctx, { now: 4000 }) // left_ms = 3000
+  QUERIES.bumpBreastSide.run(qdb, ctx, { side: 'L', deltaMs: 600_000 }) // +10 min
+  expect((QUERIES.getActiveTimer.run(qdb, ctx, {})[0] as { left_ms: number }).left_ms).toBe(603_000)
+  QUERIES.bumpBreastSide.run(qdb, ctx, { side: 'L', deltaMs: -999_999_999 }) // clamps at 0
+  expect((QUERIES.getActiveTimer.run(qdb, ctx, {})[0] as { left_ms: number }).left_ms).toBe(0)
+})
+
 test('latestChangeMarker reflects only this baby', () => {
   const { qdb, ctx, babyId } = harness()
   QUERIES.insertEntry.run(qdb, ctx, { type: 'sleep', start_ts: 10 })

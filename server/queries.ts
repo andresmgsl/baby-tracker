@@ -208,6 +208,18 @@ export const QUERIES: Record<string, QueryDef> = {
       return []
     },
   },
+  // Add/remove accrued time on one side of a running nursing timer (used when
+  // the caregiver edits the "started at" time — the delta lands on this side).
+  bumpBreastSide: {
+    scope: 'baby',
+    run(db, ctx, { side, deltaMs }) {
+      const col = side === 'L' ? 'left_ms' : 'right_ms'
+      return db.run(
+        `UPDATE active_timer SET ${col} = MAX(0, ${col} + ?) WHERE baby_id = ? AND type = 'breast'`,
+        [deltaMs, ctx.babyId],
+      )
+    },
+  },
   getActiveTimer: {
     scope: 'baby',
     run(db, ctx) {

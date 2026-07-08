@@ -23,29 +23,29 @@ describe('History', () => {
     await insertEntry(exec, mk())
     await insertEntry(exec, mk({ type: 'diaper', side: null, diaper_kind: 'wet' }))
     render(<History onEdit={() => {}} />, { wrapper })
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Selecting the diaper chip narrows the list to diaper entries.
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
-    await waitFor(() => expect(screen.queryByText(/Breast/)).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText(/Nursing/)).not.toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Chips are multi-select: adding breast shows both types again.
     await userEvent.click(screen.getByRole('button', { name: 'breast' }))
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Deselecting a chip removes it from the filter.
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
     await waitFor(() => expect(screen.queryByText(/Diaper/)).not.toBeInTheDocument())
-    expect(screen.getByText(/Breast/)).toBeInTheDocument()
+    expect(screen.getByText(/Nursing/)).toBeInTheDocument()
   })
 
   it('shows a filter-specific empty message when nothing matches', async () => {
     await insertEntry(exec, mk())
     render(<History onEdit={() => {}} />, { wrapper })
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
     await waitFor(() => expect(screen.getByText(/no entries match/i)).toBeInTheDocument())
   })

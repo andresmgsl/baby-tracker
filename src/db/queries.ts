@@ -74,6 +74,9 @@ export async function getBreastLastSide(db: Api): Promise<'L' | 'R' | null> {
 export async function pauseBreastSide(db: Api, now: number): Promise<void> {
   await db.q('pauseBreastSide', { now })
 }
+export async function bumpBreastSide(db: Api, side: 'L' | 'R', deltaMs: number): Promise<void> {
+  await db.q('bumpBreastSide', { side, deltaMs })
+}
 export async function getActiveTimer(db: Api): Promise<ActiveTimer | null> {
   const rows = await db.q<Row[]>('getActiveTimer', {})
   if (!rows.length) return null

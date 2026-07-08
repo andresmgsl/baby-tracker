@@ -27,12 +27,19 @@ export function FirstBabyScreen() {
 
   return (
     <div className="first-baby">
-      <h2>Add your first baby</h2>
-      <input className="text-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <label className="timefield"><span>Date of birth</span>
-        <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} /></label>
-      {error && <p className="login-error" role="alert">{error}</p>}
-      <button className="primary-btn" disabled={!name.trim() || busy} onClick={() => void submit()}>Add baby</button>
+      <div className="first-baby-card">
+        <span className="first-baby-kicker">Welcome</span>
+        <h2>Add your first baby</h2>
+        <p className="first-baby-sub">Set up a profile to start tracking feeds, sleep and nappies.</p>
+        <input className="text-input" placeholder="Name" value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void submit() }} />
+        <label className="timefield"><span>Date of birth</span>
+          <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} /></label>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        <button className="btn-primary first-baby-submit" disabled={!name.trim() || busy}
+          onClick={() => void submit()}>{busy ? 'Adding…' : 'Add baby'}</button>
+      </div>
     </div>
   )
 }

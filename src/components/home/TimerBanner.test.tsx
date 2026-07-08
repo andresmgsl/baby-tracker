@@ -11,12 +11,12 @@ const breast = (over: Partial<ActiveTimer> = {}): ActiveTimer => ({
 describe('TimerBanner', () => {
   it('shows the running side for an active breast timer', () => {
     render(<TimerBanner timer={breast({ side: 'L' })} elapsed={60_000} onStop={() => {}} />)
-    expect(screen.getByText(/Breast · L/)).toBeTruthy()
+    expect(screen.getByText(/Nursing · L/)).toBeTruthy()
   })
 
   it('does not render "null" when a breast timer is paused (no side running)', () => {
     render(<TimerBanner timer={breast({ side: null, running_since: null })} elapsed={60_000} onStop={() => {}} />)
     expect(screen.queryByText(/null/)).toBeNull()
-    expect(screen.getByText(/Breast/)).toBeTruthy()
+    expect(screen.getByText(/Nursing/)).toBeTruthy()
   })
 })

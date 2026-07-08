@@ -13,7 +13,7 @@ export function TimerBanner({
       <span className="tb-info">
         <span className="tb-live">
           <i className="pulse" />
-          {timer.type === 'breast' ? (timer.side ? `Breast · ${timer.side}` : 'Breast') : 'Sleep'}
+          {timer.type === 'breast' ? (timer.side ? `Nursing · ${timer.side}` : 'Nursing') : 'Sleep'}
         </span>
         <span className="tb-stop">Tap to open</span>
       </span>

@@ -1,9 +1,12 @@
 # Baby Tracker (BabyLog)
 
-A self-hosted PWA for two parents to track one baby's feeds, sleep, diapers,
-medications, notes, and growth. A small Node server on your own box owns a single
-SQLite database, so both parents see the **same shared log**. Behind a login;
-installs to the home screen.
+A self-hosted PWA to track feeds, sleep, diapers, medications, notes, and growth
+for one or more babies. A small Node server on your own box owns a single SQLite
+database that can host **multiple families**: each login belongs to a family, a
+family can track multiple babies (switchable from the sidebar), and every account
+in the same family sees the **same shared log** — but families are fully isolated
+from one another, enforced server-side on every request. Behind a login; installs
+to the home screen.
 
 ## Features
 
@@ -16,9 +19,18 @@ installs to the home screen.
   none selected shows everything); "See all →" jumps to the full History archive.
 - **History** — browse and edit past entries.
 - **Growth** — weight/height/head-circumference measurements charted over time.
-- **Shared data** — one database on the server; both accounts see the same entries.
-- **Login** — two fixed accounts (you + partner), scrypt-hashed, session-cookie auth.
-- **Backup & restore** — export/import the whole database as a `.db` file.
+- **Multiple babies per family** — add babies from Settings → Manage Babies (with
+  archive/restore); switch the active baby from the sidebar drawer, which is
+  reflected across Home, History, Growth, and timers.
+- **Families** — one server can host several families at once. Accounts are tagged
+  with a family key; all data (babies, entries, settings) is scoped to that family
+  and enforced on the server, so one family can never read or write another's data.
+- **Shared data** — every account in a family sees the same entries for that
+  family's babies.
+- **Login** — fixed accounts (you + partner, plus any other families), scrypt-hashed,
+  session-cookie auth.
+- **Backup & restore** — export/import the whole database as a `.db` file, optionally
+  restricted to a single admin family (see "Backup scope" below).
 - **Installable** — full PWA; the app shell works offline (data needs the server).
 
 ## Tech stack
@@ -82,12 +94,13 @@ Requires Node.js 18+ (developed on v26).
 npm install
 
 # one-time: create a local .env with a dev user
-node scripts/hash-password.mjs andres devpass   # copy the printed line
+node scripts/hash-password.mjs andres devpass   # copy the printed line, then
+                                                 # replace FAMILY with a family key
 cat > .env <<EOF
 PORT=8787
 DB_PATH=./data/baby-tracker.sqlite3
 SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-BT_USERS=<paste the hash-password line here>
+BT_USERS=andres:family=lopez:scrypt$...$...
 EOF
 
 npm run dev        # runs the API server + Vite together
@@ -113,13 +126,26 @@ Open http://localhost:5173 and sign in. Vite proxies `/api` to the API server on
 
 See **[deploy/DEPLOY.md](deploy/DEPLOY.md)** for the full Raspberry Pi / nginx /
 systemd / certbot walkthrough. In short: `npm run build && npm run build:server`,
-fill in `.env` (secret + two hashed users), run the server via systemd, and point
-an nginx vhost at `dist/` with `/api` proxied to the Node server over HTTPS.
+fill in `.env` (secret + family-tagged hashed users), run the server via systemd,
+and point an nginx vhost at `dist/` with `/api` proxied to the Node server over HTTPS.
 
 ## Data & privacy
 
 - All data stays on your server — nothing goes to any third party.
-- The database is a single SQLite file (`DB_PATH`). Back it up via Settings →
-  Backup, or by copying the file (see DEPLOY.md).
-- Only the two configured accounts can sign in. Always serve over HTTPS (the
+- The database is a single SQLite file (`DB_PATH`) shared by every family; rows are
+  scoped by family key and enforced server-side, so families can't see each other's
+  babies or entries. Back the file up via Settings → Backup, or by copying it
+  directly (see DEPLOY.md).
+- Only the configured `BT_USERS` accounts can sign in. Always serve over HTTPS (the
   session cookie is `Secure` in production).
+
+### Backup scope
+
+Settings → Backup exports/imports the **entire** SQLite file — every family's data
+at once. By default (no `ADMIN_FAMILY` set) any signed-in account can export or
+import, which is fine for a single-family deployment but lets any family overwrite
+the whole database, including other families' data. Once you host more than one
+family on the same server, set `ADMIN_FAMILY=<key>` in `.env` to restrict
+`/api/export` and `/api/import` to accounts in that one family; everyone else gets
+a 403. There's no per-family export in this version — it's whole-database or
+nothing.

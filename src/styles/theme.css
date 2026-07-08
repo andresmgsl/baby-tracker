@@ -90,6 +90,12 @@ button { font: inherit; cursor: pointer; }
   font-style: normal; background: var(--yellow); color: var(--ink);
   padding: 1px 5px 2px; letter-spacing: 0.04em;
 }
+.mast-baby {
+  background: none; border: 0; color: var(--paper); padding: 0;
+  display: flex; align-items: center; gap: 5px;
+  font-weight: 900; font-size: 17px; letter-spacing: -0.02em;
+}
+.mast-baby span { color: var(--yellow); font-size: 12px; }
 .mast-date {
   display: flex; align-items: center;
   font: 700 11px var(--font-mono);
@@ -276,6 +282,38 @@ button { font: inherit; cursor: pointer; }
   font: 700 26px/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- baby switcher drawer ---------- */
+.drawer-backdrop {
+  position: fixed; inset: 0;
+  background: color-mix(in oklab, var(--ink) 60%, transparent);
+  z-index: 60;
+}
+.baby-drawer {
+  position: absolute; top: 0; left: 0; height: 100%;
+  width: min(80vw, 320px);
+  background: var(--bg); color: var(--paper);
+  border-right: var(--bw-heavy) solid var(--ink);
+  box-shadow: var(--shadow-lg);
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 12px;
+}
+.baby-drawer h3 {
+  margin: 0 0 4px;
+  font-size: 15px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.baby-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.baby-item {
+  width: 100%; text-align: left;
+  background: var(--panel); color: var(--paper);
+  border: var(--bw) solid var(--ink); border-radius: var(--radius);
+  padding: 12px 14px; font-weight: 800;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.baby-item:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.baby-item.active { background: var(--yellow); color: var(--ink); }
 
 /* ---------- sheet — top edge takes the entry's hue ---------- */
 .sheet-overlay {
@@ -480,6 +518,66 @@ section.card-section:nth-of-type(3) h3::before { background: var(--c-diaper); }
 .card-section .filter-row { justify-content: space-between; }
 .card-section .filter-row select { flex: 0 0 auto; min-width: 84px; }
 .card-section .btn-ghost { margin-top: 10px; }
+
+/* ---------- babies (settings) ---------- */
+.baby-row {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 0;
+  border-bottom: var(--bw) solid var(--line-dim);
+}
+.baby-row:first-of-type { padding-top: 0; }
+.baby-row-name {
+  margin: 0;
+  font: 900 15px var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--paper);
+}
+.baby-row .text-input, .baby-row .timefield { margin-bottom: 0; }
+.baby-row .btn-link { width: auto; align-self: flex-start; padding: 4px 0; }
+.baby-add {
+  display: flex; gap: 10px; align-items: stretch;
+  padding-top: 14px; margin-bottom: 6px;
+}
+.baby-add .text-input { flex: 1; min-width: 0; margin-bottom: 0; }
+/* Override the card-section full-width button so it sits inline next to the input. */
+.baby-add .btn-primary { flex: 0 0 auto; width: auto; display: inline-flex; align-items: center; padding: 0 20px; }
+
+.edit-duration {
+  margin: 2px 0 0; text-align: right;
+  font: 800 12px var(--font-mono); letter-spacing: 0.04em;
+  color: var(--muted); text-transform: uppercase;
+}
+
+/* ---------- first-baby onboarding ---------- */
+.first-baby {
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px 18px;
+}
+.first-baby-card {
+  width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--panel);
+  border: var(--bw-heavy) solid var(--ink); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 26px 22px;
+}
+.first-baby-kicker {
+  align-self: flex-start;
+  background: var(--yellow); color: var(--ink);
+  border: 2px solid var(--ink);
+  font: 900 11px var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 3px 9px;
+}
+.first-baby-card h2 {
+  margin: 0;
+  font-size: 26px; font-weight: 900; line-height: 1.05;
+  text-transform: uppercase; letter-spacing: 0.01em;
+}
+.first-baby-sub { margin: -4px 0 4px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.first-baby-card .text-input, .first-baby-card .timefield { margin-bottom: 0; }
+.first-baby-submit { width: 100%; margin-top: 4px; }
 
 /* ---------- login ---------- */
 .login-screen {

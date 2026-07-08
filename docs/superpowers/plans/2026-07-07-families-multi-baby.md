@@ -325,18 +325,18 @@ function ensureActiveTimerBaby(db: Database.Database): void {
 }
 ```
 
-Wire them into `openStore` (after `db.exec(SCHEMA_SQL)` and the existing `ensure*` calls, both in the initial open and inside `replace`):
+Wire them into `openStore`, both in the initial open and inside `replace`. **`ensureBabyColumns` MUST run before `db.exec(SCHEMA_SQL)`** — `SCHEMA_SQL` includes `CREATE INDEX ... ON entries(baby_id, ...)`, which throws `no such column: baby_id` on a legacy `entries` table that lacks the column. `ensureBabyColumns` no-ops safely on a fresh DB because `PRAGMA table_info` on a nonexistent table returns an empty set (guard: `names.size === 0` / early skip):
 
 ```ts
+  ensureBabyColumns(db)   // BEFORE SCHEMA_SQL: adds baby_id so the baby_id indexes are valid
   db.exec(SCHEMA_SQL)
   ensureActiveTimerColumns(db)
   ensureEntriesColumns(db)
-  ensureBabyColumns(db)
   ensureSettingsScope(db)
   ensureActiveTimerBaby(db)
 ```
 
-Order matters: `db.exec(SCHEMA_SQL)` creates the target `settings`/`active_timer` only if they don't exist. On a legacy DB they already exist with the old shape, so `ensureSettingsScope`/`ensureActiveTimerBaby` detect and rebuild them. On a fresh DB the columns already match and the `ensure*` functions early-return.
+Order rationale: on a legacy DB, `ensureBabyColumns` adds `baby_id` first; then `SCHEMA_SQL`'s `CREATE TABLE IF NOT EXISTS` no-ops and its `CREATE INDEX IF NOT EXISTS` succeeds. `ensureSettingsScope`/`ensureActiveTimerBaby` run after `SCHEMA_SQL` (where `settings`/`active_timer` are guaranteed to exist) and detect+rebuild the old shape, or early-return when already migrated. Each `ensure*` guards for a nonexistent/empty table so fresh DBs are unaffected. Note: because `ensureActiveTimerColumns` (existing) runs before `ensureActiveTimerBaby` renames the legacy table, `active_timer_legacy` ends up carrying the full modern column set (`paused_ms`/`paused_at`/`left_ms`/`right_ms`/`running_since`) — Task 3 can rely on that.
 
 - [ ] **Step 4: Verify** — `npx vitest run server/store.test.ts`. Expected: PASS.
 

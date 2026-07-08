@@ -10,6 +10,10 @@ const dbPath = process.env.DB_PATH ?? './data/baby-tracker.sqlite3'
 const secret = process.env.SESSION_SECRET
 const users = parseUsers(process.env.BT_USERS)
 const staticDir = process.env.STATIC_DIR || undefined // e.g. ./dist in production
+const legacyFamily = process.env.LEGACY_FAMILY
+  || [...users.values()][0]?.family
+  || 'family'
+const adminFamily = process.env.ADMIN_FAMILY || undefined
 
 if (!secret) {
   console.error('FATAL: SESSION_SECRET is not set. Copy deploy/.env.example to .env and fill it in.')
@@ -20,13 +24,14 @@ if (users.size === 0) {
   process.exit(1)
 }
 
-const store = openStore(dbPath)
+const store = openStore(dbPath, legacyFamily)
 const server = createServer({
   store,
   users,
   secret,
   secureCookies: process.env.NODE_ENV === 'production',
   staticDir,
+  adminFamily,
 })
 
 server.listen(port, () => {

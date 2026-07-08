@@ -2,16 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
-import { DbProvider, type WorkerExecutor } from '../../db/client'
-import { makeTestExecutor } from '../../db/testExecutor'
+import { DbProvider, type Api } from '../../db/client'
+import { makeTestApi } from '../../db/testApi'
 import { insertEntry } from '../../db/queries'
 import { History } from './History'
 
-let exec: WorkerExecutor
-beforeEach(async () => {
-  const base = await makeTestExecutor()
-  exec = Object.assign(base, { exportBytes: async () => new Uint8Array(), importBytes: async () => {} }) as WorkerExecutor
-})
+let exec: Api
+beforeEach(() => { exec = makeTestApi().db })
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(DbProvider, { executor: exec, children })
 
@@ -26,29 +23,29 @@ describe('History', () => {
     await insertEntry(exec, mk())
     await insertEntry(exec, mk({ type: 'diaper', side: null, diaper_kind: 'wet' }))
     render(<History onEdit={() => {}} />, { wrapper })
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Selecting the diaper chip narrows the list to diaper entries.
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
-    await waitFor(() => expect(screen.queryByText(/Breast/)).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText(/Nursing/)).not.toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Chips are multi-select: adding breast shows both types again.
     await userEvent.click(screen.getByRole('button', { name: 'breast' }))
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     expect(screen.getByText(/Diaper/)).toBeInTheDocument()
 
     // Deselecting a chip removes it from the filter.
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
     await waitFor(() => expect(screen.queryByText(/Diaper/)).not.toBeInTheDocument())
-    expect(screen.getByText(/Breast/)).toBeInTheDocument()
+    expect(screen.getByText(/Nursing/)).toBeInTheDocument()
   })
 
   it('shows a filter-specific empty message when nothing matches', async () => {
     await insertEntry(exec, mk())
     render(<History onEdit={() => {}} />, { wrapper })
-    await waitFor(() => expect(screen.getByText(/Breast/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nursing/)).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: 'diaper' }))
     await waitFor(() => expect(screen.getByText(/no entries match/i)).toBeInTheDocument())
   })

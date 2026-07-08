@@ -20,20 +20,43 @@ export function verifyPassword(password: string, stored: string): boolean {
 }
 
 // ---- user table parsing ----
-// BT_USERS format: "alice:scrypt$salt$hash,bob:scrypt$salt$hash"
-// (base64 never contains ':' or ',', so this split is unambiguous)
 
-export type Users = Map<string, string>
+export interface UserRecord { family: string; hash: string }
+export type Users = Map<string, UserRecord>
 
+// BT_USERS format: "name:family=KEY:scrypt$salt$hash,..."
+// Split first ':' for the name; the remainder must start with 'family=';
+// take up to the next ':' as the family key, the rest is the scrypt hash.
 export function parseUsers(raw: string | undefined): Users {
   const users: Users = new Map()
   if (!raw) return users
   for (const entry of raw.split(',')) {
     const trimmed = entry.trim()
     if (!trimmed) continue
-    const idx = trimmed.indexOf(':')
-    if (idx <= 0) continue
-    users.set(trimmed.slice(0, idx), trimmed.slice(idx + 1))
+    const nameIdx = trimmed.indexOf(':')
+    if (nameIdx <= 0) {
+      console.warn(`BT_USERS: skipping malformed entry: "${trimmed.slice(0, 12)}"`)
+      continue
+    }
+    const name = trimmed.slice(0, nameIdx)
+    const rest = trimmed.slice(nameIdx + 1)
+    if (!rest.startsWith('family=')) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
+    const afterTag = rest.slice('family='.length)
+    const famIdx = afterTag.indexOf(':')
+    if (famIdx <= 0) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
+    const family = afterTag.slice(0, famIdx)
+    const hash = afterTag.slice(famIdx + 1)
+    if (!hash) {
+      console.warn(`BT_USERS: skipping malformed entry: "${name}"`)
+      continue
+    }
+    users.set(name, { family, hash })
   }
   return users
 }

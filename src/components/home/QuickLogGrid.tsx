@@ -4,7 +4,7 @@ import { formatAgo } from '../../lib/time'
 export type LogTarget = EntryType | 'measure' | 'temperature'
 
 const BUTTONS: { target: LogTarget; icon: string; label: string }[] = [
-  { target: 'breast', icon: '🤱', label: 'Breast' },
+  { target: 'breast', icon: '🤱', label: 'Nursing' },
   { target: 'bottle', icon: '🍼', label: 'Bottle' },
   { target: 'sleep', icon: '😴', label: 'Sleep' },
   { target: 'diaper', icon: '💧', label: 'Diaper' },

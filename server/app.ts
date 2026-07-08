@@ -5,6 +5,7 @@ import {
   verifyPassword, verifySession, signSession, parseCookies, type Users,
 } from './auth.ts'
 import type { Store } from './store.ts'
+import { QUERIES, type QueryCtx } from './queries.ts'
 
 const SESSION_TTL_MS = 30 * 86_400_000
 const COOKIE = 'bt_session'
@@ -16,6 +17,8 @@ export interface AppConfig {
   secureCookies?: boolean
   /** Directory of built static assets to serve for non-/api routes (prod). */
   staticDir?: string
+  /** When set, restricts /api/export and /api/import to accounts in this one family. */
+  adminFamily?: string
 }
 
 const MIME: Record<string, string> = {
@@ -54,10 +57,15 @@ function cookieHeader(token: string, secure: boolean, maxAgeMs: number): string 
 }
 
 export function createHandler(config: AppConfig) {
-  const { store, users, secret, secureCookies = false, staticDir } = config
+  const { store, users, secret, secureCookies = false, staticDir, adminFamily } = config
 
   const userOf = (req: IncomingMessage): string | null =>
     verifySession(parseCookies(req.headers.cookie)[COOKIE], secret)
+
+  const familyOf = (req: IncomingMessage): string | null => {
+    const user = userOf(req)
+    return user ? users.get(user)?.family ?? null : null
+  }
 
   return async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = (req.url ?? '/').split('?')[0]
@@ -67,8 +75,8 @@ export function createHandler(config: AppConfig) {
       // ---- auth endpoints ----
       if (url === '/api/login' && method === 'POST') {
         const { username, password } = JSON.parse((await readBody(req)).toString() || '{}')
-        const stored = typeof username === 'string' ? users.get(username) : undefined
-        if (!stored || typeof password !== 'string' || !verifyPassword(password, stored)) {
+        const record = typeof username === 'string' ? users.get(username) : undefined
+        if (!record || typeof password !== 'string' || !verifyPassword(password, record.hash)) {
           return send(res, 401, { error: 'Invalid username or password.' })
         }
         const token = signSession(username, secret, SESSION_TTL_MS)
@@ -86,22 +94,50 @@ export function createHandler(config: AppConfig) {
       if (url.startsWith('/api/')) {
         if (!userOf(req)) return send(res, 401, { error: 'Not signed in.' })
 
-        if (url === '/api/exec' && method === 'POST') {
-          const { sql, params } = JSON.parse((await readBody(req)).toString() || '{}')
-          if (typeof sql !== 'string') return send(res, 400, { error: 'Missing sql.' })
-          return send(res, 200, { rows: store.exec(sql, Array.isArray(params) ? params : []) })
+        const resolveCtx = (name: string, babyHeader: string | undefined): { ctx?: QueryCtx; error?: [number, string] } => {
+          const family = familyOf(req)
+          if (!family) return { error: [403, 'No family for user.'] }
+          const def = QUERIES[name]
+          if (!def) return { error: [404, `Unknown query: ${name}`] }
+          if (def.scope === 'family') return { ctx: { family, babyId: -1 } }
+          const id = Number(babyHeader)
+          if (!babyHeader || !Number.isInteger(id) || id <= 0) return { error: [400, 'Missing X-Baby-Id.'] }
+          const owns = store.exec('SELECT 1 FROM babies WHERE id = ? AND family = ?', [id, family])
+          if (!owns.length) return { error: [403, 'Baby not in your family.'] }
+          return { ctx: { family, babyId: id } }
         }
-        if (url === '/api/tx' && method === 'POST') {
-          const { statements } = JSON.parse((await readBody(req)).toString() || '{}')
-          if (!Array.isArray(statements)) return send(res, 400, { error: 'Missing statements.' })
-          return send(res, 200, { results: store.transaction(statements) })
+        const babyHeader = req.headers['x-baby-id'] as string | undefined
+
+        if (url === '/api/q' && method === 'POST') {
+          const { name, args } = JSON.parse((await readBody(req)).toString() || '{}')
+          if (typeof name !== 'string') return send(res, 400, { error: 'Missing query name.' })
+          const { ctx, error } = resolveCtx(name, babyHeader)
+          if (error) return send(res, error[0], { error: error[1] })
+          const rows = QUERIES[name].run({ run: store.exec }, ctx!, args ?? {})
+          return send(res, 200, { rows })
+        }
+        if (url === '/api/qtx' && method === 'POST') {
+          const { ops } = JSON.parse((await readBody(req)).toString() || '{}')
+          if (!Array.isArray(ops)) return send(res, 400, { error: 'Missing ops.' })
+          // Validate every op's ctx up front; a baby-scoped op fixes the babyId for all.
+          const ctxs: QueryCtx[] = []
+          for (const op of ops) {
+            const { ctx, error } = resolveCtx(op?.name, babyHeader)
+            if (error) return send(res, error[0], { error: error[1] })
+            ctxs.push(ctx!)
+          }
+          const results = store.transaction((qdb) =>
+            ops.map((op, i) => QUERIES[op.name].run(qdb, ctxs[i], op.args ?? {})))
+          return send(res, 200, { results })
         }
         if (url === '/api/export' && method === 'GET') {
+          if (adminFamily && familyOf(req) !== adminFamily) return send(res, 403, { error: 'Not authorized.' })
           return send(res, 200, store.serialize(), {
             'Content-Disposition': 'attachment; filename="baby-tracker.sqlite3"',
           })
         }
         if (url === '/api/import' && method === 'POST') {
+          if (adminFamily && familyOf(req) !== adminFamily) return send(res, 403, { error: 'Not authorized.' })
           store.replace(await readBody(req))
           return send(res, 200, { ok: true })
         }

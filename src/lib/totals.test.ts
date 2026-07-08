@@ -3,7 +3,7 @@ import { computeDailyTotals } from './totals'
 import type { Entry } from '../db/types'
 
 const base = {
-  end_ts: null, side: null, amount_ml: null, milk_type: null, food: null,
+  baby_id: 1, end_ts: null, side: null, amount_ml: null, milk_type: null, food: null,
   diaper_kind: null, med_name: null, med_dose: null, note: null, photo_id: null,
   left_ms: null, right_ms: null, created_at: 0, updated_at: 0,
 }

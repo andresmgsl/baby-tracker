@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BottomTabs, type TabId } from './components/BottomTabs'
 import { Home } from './components/home/Home'
 import { LogSheet } from './components/home/LogSheet'
@@ -11,6 +11,9 @@ import { EditEntrySheet } from './components/history/EditEntrySheet'
 import { Settings } from './components/settings/Settings'
 import type { Entry } from './db/types'
 import { useLiveSync } from './state/useLiveSync'
+import { useActiveBaby } from './state/ActiveBabyContext'
+import { FirstBabyScreen } from './components/babies/FirstBabyScreen'
+import { BabySwitcher } from './components/babies/BabySwitcher'
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
@@ -19,12 +22,19 @@ export default function App() {
   const [editing, setEditing] = useState<Entry | null>(null)
   const [sleepOpen, setSleepOpen] = useState(false)
   const [breastOpen, setBreastOpen] = useState(false)
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const { active, loading: babyLoading, activeId } = useActiveBaby()
   const today = new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
   useLiveSync(() => setRefreshKey((k) => k + 1))
+  useEffect(() => { setRefreshKey((k) => k + 1) }, [activeId])
+  if (babyLoading) return <div className="app" />
+  if (!active) return <div className="app"><FirstBabyScreen /></div>
   return (
     <div className="app">
       <header className="masthead">
-        <span className="mast-word">BABY<i>LOG</i></span>
+        <button className="mast-baby" onClick={() => setSwitcherOpen(true)}>
+          {active.name} <span aria-hidden>▾</span>
+        </button>
         <span className="mast-date">{today}</span>
       </header>
       <main className="app-main">
@@ -67,6 +77,11 @@ export default function App() {
           onCommitted={() => { setBreastOpen(false); setRefreshKey((k) => k + 1) }}
         />
       )}
+      <BabySwitcher
+        open={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+        onManage={() => { setSwitcherOpen(false); setTab('settings') }}
+      />
     </div>
   )
 }

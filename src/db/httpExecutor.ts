@@ -1,5 +1,5 @@
-import type { Row } from './executor'
-import type { WorkerExecutor } from './client'
+import { getActiveBabyId } from './activeBabyRef'
+import type { Api } from './client'
 
 /** Thrown when the API rejects a request for lack of a valid session. */
 export class UnauthorizedError extends Error {
@@ -24,41 +24,33 @@ async function api(path: string, init: RequestInit = {}): Promise<Response> {
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
+function babyHeaders(): Record<string, string> {
+  const id = getActiveBabyId()
+  return id == null ? { ...JSON_HEADERS } : { ...JSON_HEADERS, 'X-Baby-Id': String(id) }
+}
+
 /**
- * Talks to the shared server DB over HTTP. Implements the same interface the
- * app used for the in-browser SQLite worker, so no query/component code changes.
+ * Talks to the shared server DB over HTTP via named-query dispatch (/api/q, /api/qtx),
+ * stamping the active baby id on every request so the server can scope access.
  */
-export function makeHttpExecutor(): WorkerExecutor {
-  const exec = async (sql: string, params: unknown[] = []): Promise<Row[]> => {
-    const res = await api('/exec', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sql, params }) })
-    const { rows } = await res.json()
-    return rows as Row[]
-  }
-
-  // The app never opens a transaction at runtime (verified); statements run
-  // sequentially against the shared connection. Kept for interface parity.
-  const txExecutor: WorkerExecutor = {
-    exec,
-    transaction: (fn) => fn(txExecutor),
-    close: async () => {},
-    exportBytes: async () => new Uint8Array(),
-    importBytes: async () => {},
-  }
-
+export function makeApiClient(): Api {
   return {
-    exec,
-    async transaction(fn) { return fn(txExecutor) },
-    async close() {},
+    async q(name, args = {}) {
+      const res = await api('/q', { method: 'POST', headers: babyHeaders(), body: JSON.stringify({ name, args }) })
+      const { rows } = await res.json()
+      return rows
+    },
+    async tx(ops) {
+      const res = await api('/qtx', { method: 'POST', headers: babyHeaders(), body: JSON.stringify({ ops }) })
+      const { results } = await res.json()
+      return results
+    },
     async exportBytes() {
       const res = await api('/export', { method: 'GET' })
       return new Uint8Array(await res.arrayBuffer())
     },
     async importBytes(bytes: Uint8Array) {
-      await api('/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: new Blob([bytes as unknown as BlobPart]),
-      })
+      await api('/import', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: new Blob([bytes as unknown as BlobPart]) })
     },
   }
 }

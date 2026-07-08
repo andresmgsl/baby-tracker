@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useDb } from '../../db/client'
 import { useActiveTimer } from '../../state/useActiveTimer'
 import {
-  insertEntry, clearTimer, setTimerStart, getSetting,
-  startBreastSide, pauseBreastSide,
+  insertEntry, clearTimer, setTimerStart, getBreastLastSide,
+  startBreastSide, pauseBreastSide, bumpBreastSide,
 } from '../../db/queries'
 import { formatElapsed, clampStartTs } from '../../lib/timer'
 import { breastTotals, deriveSide } from '../../lib/breast'
@@ -50,7 +50,7 @@ export function BreastSession({ syncSignal, onClose, onCommitted }: BreastSessio
 
   // Last-used side for the badge (only meaningful before this session accrues time).
   useEffect(() => {
-    void getSetting(db, 'breast_last_side').then((v) => setLastSide(v === 'R' ? 'R' : v === 'L' ? 'L' : null))
+    void getBreastLastSide(db).then(setLastSide)
   }, [db, syncSignal])
 
   // Detect the other caregiver ending the session out from under us.
@@ -70,8 +70,16 @@ export function BreastSession({ syncSignal, onClose, onCommitted }: BreastSessio
 
   async function editStart(ts: number) {
     if (!timer) return
-    await setTimerStart(db, 'breast', clampStartTs(ts, Date.now(), null))
+    // Editing "started at" shifts the feed's start; the resulting +/- delta is
+    // added to the active side (or, if none is running, the side with more time).
+    const clamped = clampStartTs(ts, Date.now(), null)
+    const delta = timer.start_ts - clamped // >0 when moved earlier ⇒ add time
+    const active = timer.side === 'L' || timer.side === 'R' ? timer.side : null
+    const side: 'L' | 'R' = active ?? (timer.left_ms >= timer.right_ms ? 'L' : 'R')
+    await setTimerStart(db, 'breast', clamped)
+    if (delta !== 0) await bumpBreastSide(db, side, delta)
     await refresh()
+    setNow(Date.now())
     setEditingStart(false)
   }
 

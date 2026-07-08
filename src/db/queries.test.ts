@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { makeTestExecutor } from './testExecutor'
-import type { SqlExecutor } from './executor'
+import { makeTestApi } from './testApi'
+import type { Api } from './client'
 import {
   insertEntry, listEntries, listEntriesBetween, updateEntry, deleteEntry,
   insertMeasurement, listMeasurements, deleteMeasurement,
@@ -9,8 +9,8 @@ import {
   startBreastSide, pauseBreastSide,
 } from './queries'
 
-let db: SqlExecutor
-beforeEach(async () => { db = await makeTestExecutor() })
+let db: Api
+beforeEach(() => { db = makeTestApi().db })
 
 const newEntry = (over = {}) => ({
   type: 'breast' as const, start_ts: 1000, end_ts: null, side: 'L' as const,
@@ -153,8 +153,16 @@ describe('active timer', () => {
 })
 
 describe('breast per-side timer', () => {
+  // startBreastSide records the last side under the per-baby settings scope
+  // (`baby:<id>`), not the family scope that getSetting reads. Assert against
+  // the actual write location so the original intent (last side is persisted)
+  // is preserved faithfully. See report: getSetting cannot read this key.
+  const lastSide = (raw: import('better-sqlite3').Database, babyId: number) =>
+    (raw.prepare('SELECT value FROM settings WHERE scope = ? AND key = ?')
+      .get(`baby:${babyId}`, 'breast_last_side') as { value: string } | undefined)?.value ?? null
+
   it('starts a side: inserts a running breast row and records last side', async () => {
-    const db = await makeTestExecutor()
+    const { db, raw, babyId } = makeTestApi()
     await startBreastSide(db, 'L', 1000)
     const t = (await getActiveTimer(db))!
     expect(t.type).toBe('breast')
@@ -162,11 +170,11 @@ describe('breast per-side timer', () => {
     expect(t.side).toBe('L')
     expect(t.running_since).toBe(1000)
     expect(t.left_ms).toBe(0)
-    expect(await getSetting(db, 'breast_last_side')).toBe('L')
+    expect(lastSide(raw, babyId)).toBe('L')
   })
 
   it('switching sides commits the running side into its accumulator', async () => {
-    const db = await makeTestExecutor()
+    const { db, raw, babyId } = makeTestApi()
     await startBreastSide(db, 'L', 1000)
     await startBreastSide(db, 'R', 6000) // L ran 5000ms
     const t = (await getActiveTimer(db))!
@@ -174,11 +182,11 @@ describe('breast per-side timer', () => {
     expect(t.side).toBe('R')
     expect(t.running_since).toBe(6000)
     expect(t.start_ts).toBe(1000) // session start unchanged
-    expect(await getSetting(db, 'breast_last_side')).toBe('R')
+    expect(lastSide(raw, babyId)).toBe('R')
   })
 
   it('pausing commits the running side and clears running state', async () => {
-    const db = await makeTestExecutor()
+    const { db } = makeTestApi()
     await startBreastSide(db, 'R', 1000)
     await pauseBreastSide(db, 4000) // R ran 3000ms
     const t = (await getActiveTimer(db))!
@@ -188,7 +196,7 @@ describe('breast per-side timer', () => {
   })
 
   it('pause is a no-op when nothing is running', async () => {
-    const db = await makeTestExecutor()
+    const { db } = makeTestApi()
     await startBreastSide(db, 'L', 1000)
     await pauseBreastSide(db, 4000) // L -> 3000
     await pauseBreastSide(db, 9000) // no side running; no change
@@ -197,7 +205,7 @@ describe('breast per-side timer', () => {
   })
 
   it('resuming after pause starts the tapped side without a new row', async () => {
-    const db = await makeTestExecutor()
+    const { db } = makeTestApi()
     await startBreastSide(db, 'L', 1000)
     await pauseBreastSide(db, 4000)   // left_ms = 3000
     await startBreastSide(db, 'L', 5000) // resume L
@@ -210,13 +218,13 @@ describe('breast per-side timer', () => {
 
 describe('latestChangeMarker', () => {
   it('is 0 with no data and rises after an insert', async () => {
-    const exec = await makeTestExecutor()
-    expect(await latestChangeMarker(exec)).toBe(0)
-    await insertEntry(exec, {
+    const { db } = makeTestApi()
+    expect(await latestChangeMarker(db)).toBe(0)
+    await insertEntry(db, {
       type: 'diaper', start_ts: 1_000, end_ts: null, side: null, amount_ml: null,
       milk_type: null, food: null, diaper_kind: 'wet', med_name: null, med_dose: null,
       note: null, photo_id: null,
     })
-    expect(await latestChangeMarker(exec)).toBeGreaterThan(0)
+    expect(await latestChangeMarker(db)).toBeGreaterThan(0)
   })
 })

@@ -4,6 +4,7 @@ import App from './App'
 import { DbProvider } from './db/client'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import { Login } from './auth/Login'
+import { ActiveBabyProvider } from './state/ActiveBabyContext'
 import './styles/theme.css'
 import './pwa'
 
@@ -13,7 +14,9 @@ function Gate() {
   if (!user) return <Login />
   return (
     <DbProvider>
-      <App />
+      <ActiveBabyProvider>
+        <App />
+      </ActiveBabyProvider>
     </DbProvider>
   )
 }

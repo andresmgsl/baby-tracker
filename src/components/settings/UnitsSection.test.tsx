@@ -2,16 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
-import { DbProvider, type WorkerExecutor } from '../../db/client'
-import { makeTestExecutor } from '../../db/testExecutor'
+import { DbProvider, type Api } from '../../db/client'
+import { makeTestApi } from '../../db/testApi'
 import { getSetting } from '../../db/queries'
 import { UnitsSection } from './UnitsSection'
 
-let exec: WorkerExecutor
-beforeEach(async () => {
-  const base = await makeTestExecutor()
-  exec = Object.assign(base, { exportBytes: async () => new Uint8Array(), importBytes: async () => {} }) as WorkerExecutor
-})
+let exec: Api
+beforeEach(() => { exec = makeTestApi().db })
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(DbProvider, { executor: exec, children })
 

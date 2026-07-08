@@ -6,6 +6,7 @@ export type MeasurementType = 'weight' | 'height' | 'head' | 'temperature'
 
 export interface Entry {
   id: number
+  baby_id: number
   type: EntryType
   start_ts: number
   end_ts: number | null
@@ -25,6 +26,7 @@ export interface Entry {
 }
 export interface Measurement {
   id: number
+  baby_id: number
   type: MeasurementType
   ts: number
   value: number

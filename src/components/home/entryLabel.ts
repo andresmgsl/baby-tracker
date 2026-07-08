@@ -13,9 +13,9 @@ export function entryLabel(e: Entry): { icon: string; text: string } {
           : r > 0
             ? `R · ${formatDuration(r)}`
             : `L · ${formatDuration(l)}`
-        return { icon: '🤱', text: `Breast · ${detail}` }
+        return { icon: '🤱', text: `Nursing · ${detail}` }
       }
-      return { icon: '🤱', text: ['Breast', e.side, dur].filter(Boolean).join(' · ') }
+      return { icon: '🤱', text: ['Nursing', e.side, dur].filter(Boolean).join(' · ') }
     }
     case 'bottle':
       return { icon: '🍼', text: ['Bottle', e.amount_ml != null ? `${e.amount_ml}ml` : null, e.milk_type].filter(Boolean).join(' · ') }

@@ -54,19 +54,32 @@ mkdir -p data          # where the database file will live
 cp deploy/.env.example .env
 # generate a session secret:
 node -e "console.log('SESSION_SECRET='+require('crypto').randomBytes(32).toString('hex'))"
-# generate one line per user (the name on the left becomes the login username):
-npm run hash-password andres 'a-strong-password'
-npm run hash-password wife   'her-strong-password'
+# generate one line per user (the name on the left becomes the login username).
+# each line prints as  name:family=FAMILY:scrypt$...  — replace FAMILY with a
+# family key (accounts in the same family share the same babies & data):
+npm run hash-password andres 'a-strong-password'   # -> put family=lopez
+npm run hash-password wife   'her-strong-password'  # -> put family=lopez
 ```
 
-Edit `.env`: paste the `SESSION_SECRET`, and set `BT_USERS` to both generated
-entries joined by a comma (no spaces):
+Edit `.env`: paste the `SESSION_SECRET`, and set `BT_USERS` to the generated
+entries (FAMILY replaced) joined by a comma (no spaces). Both parents of one
+household share a family key; a second household gets a different key:
 
 ```
-BT_USERS=andres:scrypt$...$...,wife:scrypt$...$...
+BT_USERS=andres:family=lopez:scrypt$...$...,wife:family=lopez:scrypt$...$...
 DB_PATH=/opt/baby-tracker/data/baby-tracker.sqlite3
 NODE_ENV=production
+# Which family your existing (pre-families) data migrates onto on first boot.
+# Defaults to the first family in BT_USERS; set explicitly to be safe:
+LEGACY_FAMILY=lopez
+# Optional: once more than one family shares this server, restrict whole-database
+# backup export/import to accounts in this one family (others get 403):
+# ADMIN_FAMILY=lopez
 ```
+
+> **`BT_USERS` format:** `name:family=KEY:scrypt$salt$hash`, comma-separated.
+> An entry without a `family=` tag is ignored (the server logs a warning and that
+> user can't sign in), so every account must carry one.
 
 ## 5. Run the API as a service
 
@@ -113,13 +126,15 @@ you set a new one. To change a password, add a user, or remove one:
 
 ```bash
 cd /opt/baby-tracker
-npm run hash-password <name> '<new-password>'   # prints  name:scrypt$...
-nano .env                                       # update the BT_USERS line
+npm run hash-password <name> '<new-password>'   # prints  name:family=FAMILY:scrypt$...
+nano .env                                       # update the BT_USERS line (set the family key)
 sudo systemctl restart baby-tracker
 ```
 
-`BT_USERS` is the comma-separated list of `name:hash` entries (no spaces). The names
-before each `:scrypt$` are the login usernames — `grep '^BT_USERS' .env` to see them.
+`BT_USERS` is the comma-separated list of `name:family=KEY:scrypt$...` entries (no
+spaces). The names before the first `:` are the login usernames, and the
+`family=KEY` segment groups accounts into a family — `grep '^BT_USERS' .env` to see
+them. To add a whole new family, generate its users with a fresh family key.
 
 ## 8. Updating later
 
@@ -131,14 +146,31 @@ npm run build && npm run build:server
 sudo systemctl restart baby-tracker
 ```
 
-nginx serves the new `dist/` immediately. The database in `data/` is untouched by updates.
+nginx serves the new `dist/` immediately. Most updates leave the database in
+`data/` untouched.
+
+> **Upgrading to the families / multi-baby release (one-time):** this release
+> migrates the database **in place** on the first restart — it adds a `babies`
+> table and attaches all existing entries/measurements to one baby under
+> `LEGACY_FAMILY`. It is idempotent (safe to restart repeatedly), but do two
+> things first:
+> 1. **Back up** `data/baby-tracker.sqlite3` (see §9) before restarting.
+> 2. **Convert `BT_USERS` to the family-tagged format** (`name:family=KEY:...`) —
+>    the old `name:scrypt$...` format no longer authenticates, and set
+>    `LEGACY_FAMILY` to the family your existing data should land under.
+>
+> After the restart the app opens on that family's migrated baby; add more babies
+> in-app via **Settings → Babies**.
 
 ## 9. Backups
 
-The entire history is the single file at `DB_PATH`. Two ways to back it up:
+The entire history is the single file at `DB_PATH` — **every family's data in one
+file**. Two ways to back it up:
 
 - **In-app:** Settings → Backup → *Export database* downloads a `.db` snapshot; *Import*
-  restores one. (These read/write the server database.)
+  restores one. (These read/write the whole server database, all families at once.)
+  On a multi-family server set `ADMIN_FAMILY=<key>` in `.env` so only that family can
+  export/import — otherwise any signed-in account can overwrite everyone's data.
 - **On the Pi:** copy the file, e.g. a nightly cron (`crontab -e`):
   ```bash
   0 3 * * *  mkdir -p "$HOME/backups" && cp /opt/baby-tracker/data/baby-tracker.sqlite3 "$HOME/backups/baby-$(date +\%F).sqlite3"

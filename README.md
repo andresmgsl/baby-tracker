@@ -10,9 +10,10 @@ to the home screen.
 
 ## Features
 
-- **Quick logging** — one tap to record breast/bottle feeds, sleep, diapers,
+- **Quick logging** — one tap to record nursing/bottle feeds, sleep, diapers,
   solids, meds, temperature, measurements, and free-text notes.
-- **Live timers** — running timers for breastfeeding and sleep, resumed across reloads.
+- **Live timers** — running timers for nursing and sleep, resumed across reloads;
+  editing a running timer's "started at" adjusts the accrued time (per side for nursing).
 - **Home timeline** — the last 3 days grouped by day (Today / Yesterday / date),
   plus today-only totals (feeds, nappies, sleep).
 - **Filter chips** — tap activity-type icons to narrow the Home timeline (multi-select;
@@ -49,38 +50,47 @@ dependencies on the server — just Node built-ins.
 
 ## Architecture
 
-Client and server are cleanly split by one interface. The React app talks to the
-DB through a `SqlExecutor` (`exec(sql, params)` / `transaction`); in the browser
-that's an **HTTP executor** that posts to the API, and the server runs the SQL
-against the shared SQLite file.
+**The browser never sends SQL.** The client calls **named queries** through a
+tiny `Api` (`useDb().q(name, args)` / `tx`); the server owns every SQL statement
+in a query registry and runs it against the shared SQLite file.
 
 ```
 React app (browser)
-  └─ useDb() ─▶ makeHttpExecutor  (src/db/httpExecutor.ts)
-                  │  POST /api/exec { sql, params }   (session cookie)
+  └─ useDb() ─▶ makeApiClient  (src/db/httpExecutor.ts)
+                  │  POST /api/q { name, args }   (session cookie + X-Baby-Id header)
                   ▼
              Node API server      (server/)
-                  ├─ auth: /api/login /logout /me   (server/auth.ts)
-                  └─ better-sqlite3 ─▶ baby-tracker.sqlite3  (server/store.ts)
+                  ├─ auth:     /api/login /logout /me      (server/auth.ts)
+                  ├─ dispatch: /api/q  /api/qtx            (server/app.ts)
+                  │     └─ resolve family from the session, validate X-Baby-Id ∈ family,
+                  │        look up the query in the registry, inject scope, run it
+                  ├─ queries:  the SQL for every query      (server/queries.ts)
+                  └─ better-sqlite3 ─▶ baby-tracker.sqlite3 (server/store.ts)
 ```
 
-Because the query code (`src/db/queries.ts`) is written against the executor
-interface, swapping the browser's storage engine for the network required **no
-changes** to queries, components, or hooks.
+Isolation is enforced at dispatch: a **baby-scoped** query only runs after the
+server confirms the requested `X-Baby-Id` belongs to the caller's family (else
+`403`), and **family-scoped** queries filter by the session's family — so a
+client can never read or write another family's data, even by crafting requests.
+`src/db/queries.ts` is a thin set of typed wrappers over `q(name, …)`; the SQL
+lives server-side in `server/queries.ts`.
 
 ### Layout
 
 ```
 server/
-├── index.ts        entry: load env, open store, listen
-├── app.ts          http routing: auth + /api/exec /tx /export /import + static
-├── auth.ts         scrypt hashing, signed session cookie, user table parsing
+├── index.ts        entry: load env, open store (runs migration), listen
+├── app.ts          http routing: auth + /api/q /qtx /export /import + static
+├── auth.ts         scrypt hashing, signed session cookie, family-tagged user parsing
+├── queries.ts      named-query registry: the SQL for every query, family/baby-scoped
+├── migrate.ts      one-time upgrade of legacy single-baby data onto a family's baby
 ├── store.ts        better-sqlite3 wrapper (exec/transaction/serialize/replace)
 └── env.ts          minimal .env loader
 src/
 ├── auth/           AuthContext, Login screen, login gate (main.tsx)
-├── db/             httpExecutor (client), client provider, schema, queries
-├── components/     home / history / growth / settings screens
+├── db/             Api client (makeApiClient), active-baby ref, query wrappers, schema
+├── state/          ActiveBabyContext (active baby) + live-sync / timer hooks
+├── components/     home / history / growth / settings / babies screens
 ├── lib/            pure helpers: time, timer, totals, units, backup
 └── styles/theme.css   dark neobrutalist design system
 deploy/             nginx site, systemd unit, .env.example, DEPLOY.md

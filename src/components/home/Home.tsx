@@ -34,8 +34,10 @@ export function Home({
   const [selected, setSelected] = useState<Set<EntryType>>(new Set())
 
   const todayStart = startOfDay(now)
-  const todayEntries = useMemo(() => entries.filter((e) => e.start_ts >= todayStart), [entries, todayStart])
-  const totals = useMemo(() => computeDailyTotals(todayEntries), [todayEntries])
+  const totals = useMemo(
+    () => computeDailyTotals(entries, todayStart, endOfDay(now)),
+    [entries, todayStart, now],
+  )
   const groups = useMemo(() => dayGroups(filterEntries(entries, selected), now), [entries, selected, now])
 
   useEffect(() => {

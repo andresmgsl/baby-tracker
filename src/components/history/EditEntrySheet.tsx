@@ -28,11 +28,17 @@ function EditBody({ entry, onClose, onChanged }: { entry: Entry; onClose: () => 
   const [start, setStart] = useState(entry.start_ts)
   const [end, setEnd] = useState<number | null>(entry.end_ts)
   const [note, setNote] = useState(entry.note ?? '')
+  const [medName, setMedName] = useState(entry.med_name ?? '')
+  const [medDose, setMedDose] = useState(entry.med_dose ?? '')
 
   const span = end != null ? Math.max(0, end - start) : null
 
   async function save() {
     const patch: Partial<NewEntry> = { start_ts: start, end_ts: end, note: note.trim() || null }
+    if (entry.type === 'meds') {
+      patch.med_name = medName.trim() || null
+      patch.med_dose = medDose.trim() || null
+    }
     // For nursing, the feed duration is the start→end span, split across whichever
     // side(s) already had time (ratio preserved); a single-sided feed keeps its side.
     if (entry.type === 'breast' && end != null) {
@@ -68,6 +74,14 @@ function EditBody({ entry, onClose, onChanged }: { entry: Entry; onClose: () => 
             <div className="sectlbl">End</div>
             <TimeField value={end ?? entry.end_ts} onChange={setEnd} />
             <p className="edit-duration">Duration · {formatDuration(span ?? 0)}</p>
+          </>
+        )}
+        {entry.type === 'meds' && (
+          <>
+            <div className="sectlbl">Name</div>
+            <input className="text-input" placeholder="Name (e.g. Vitamin D)" value={medName} onChange={(e) => setMedName(e.target.value)} />
+            <div className="sectlbl">Dose</div>
+            <input className="text-input" placeholder="Dose (e.g. 1 drop)" value={medDose} onChange={(e) => setMedDose(e.target.value)} />
           </>
         )}
         <textarea className="text-input" rows={2} placeholder="Note" value={note} onChange={(e) => setNote(e.target.value)} />

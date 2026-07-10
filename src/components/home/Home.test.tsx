@@ -46,6 +46,23 @@ describe('Home', () => {
     expect(screen.getByText('nappies').previousElementSibling).toHaveTextContent('1')
   })
 
+  it('counts the post-midnight portion of a sleep that started yesterday', async () => {
+    const now = Date.now()
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0)
+    const HOUR = 3_600_000
+    // Sleep from 2h before midnight to 1h after midnight (into today).
+    await insertEntry(exec, {
+      type: 'sleep', start_ts: todayStart.getTime() - 2 * HOUR, end_ts: todayStart.getTime() + HOUR,
+      side: null, amount_ml: null, milk_type: null, food: null, diaper_kind: null,
+      med_name: null, med_dose: null, note: null, photo_id: null,
+    })
+    render(<Home onLog={() => {}} onSelectEntry={() => {}} onOpenSleep={() => {}} onOpenBreast={() => {}} onSeeAll={() => {}} />, { wrapper })
+    // Today's sleep total shows the 1h that fell after midnight, formatted as "1h 0m".
+    await waitFor(() =>
+      expect(screen.getByText('sleep').previousElementSibling).toHaveTextContent('1h'),
+    )
+  })
+
   it('See all fires onSeeAll', async () => {
     const onSeeAll = vi.fn()
     render(<Home onLog={() => {}} onSelectEntry={() => {}} onOpenSleep={() => {}} onOpenBreast={() => {}} onSeeAll={onSeeAll} />, { wrapper })

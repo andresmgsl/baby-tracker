@@ -2,11 +2,11 @@
 
 BabyLog is a small static web app (`dist/`) plus a Node API server (`server-dist/index.mjs`)
 that owns one SQLite database. nginx serves the static files and reverse-proxies
-`/api` to the Node server; TLS is terminated by nginx (certbot), same as Jellyfin.
+`/api` to the Node server; TLS is terminated by nginx (certbot).
 
 Both parents share **one** database on the Pi — logging on one phone shows up on the other.
 
-Assumes the repo lives at `/opt/baby-tracker` and the subdomain is `baby.abiqum.com`
+Assumes the repo lives at `/opt/baby-tracker` and the subdomain is `baby.example.com`
 (adjust paths/host to taste).
 
 ## 0. Prerequisites
@@ -22,13 +22,13 @@ sudo apt update && sudo apt install -y build-essential python3 git
 
 ## 1. DNS
 
-Already set: a `CNAME` record `baby` → `smallserver.asuscomm.com` (your ASUS router's
-DDNS), so `baby.abiqum.com` resolves to the Pi's network — the same path Jellyfin uses.
+Point a `CNAME` record `baby` → your router's DDNS hostname (e.g.
+`yourrouter.example-ddns.net`), so `baby.example.com` resolves to the Pi's network.
 Make sure ports 80 and 443 are forwarded to the Pi so certbot's challenge can reach it,
 then confirm it resolves before continuing:
 
 ```bash
-dig +short baby.abiqum.com     # should chain to smallserver.asuscomm.com -> your IP
+dig +short baby.example.com     # should chain to your DDNS hostname -> your IP
 ```
 
 ## 2. Get the code onto the Pi
@@ -106,13 +106,13 @@ curl -s localhost:8787/api/me         # -> {"error":"Not signed in."}  (good: it
 ## 6. nginx + HTTPS
 
 ```bash
-sudo cp deploy/nginx-baby.abiqum.com.conf /etc/nginx/sites-available/baby.abiqum.com
-sudo ln -s /etc/nginx/sites-available/baby.abiqum.com /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-baby.example.com.conf /etc/nginx/sites-available/baby.example.com
+sudo ln -s /etc/nginx/sites-available/baby.example.com /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d baby.abiqum.com     # choose "redirect" (option 2) when asked
+sudo certbot --nginx -d baby.example.com     # choose "redirect" (option 2) when asked
 ```
 
-Open **https://baby.abiqum.com** → you should get the BABYLOG login. Sign in with
+Open **https://baby.example.com** → you should get the BABYLOG login. Sign in with
 one of the accounts you created. Install it to your home screen (Add to Home Screen)
 to use it like an app; repeat on the second phone with the other account.
 
@@ -184,11 +184,11 @@ least 192×192 and 512×512. After deploying, confirm the manifest and icons are
 and valid (a 404 or a tiny/placeholder icon silently suppresses the install prompt):
 
 ```bash
-curl -sI https://baby.abiqum.com/manifest.webmanifest   # 200, application/manifest+json
-curl -sI https://baby.abiqum.com/icon-192.png           # 200, image/png
-curl -sI https://baby.abiqum.com/icon-512.png           # 200, image/png
+curl -sI https://baby.example.com/manifest.webmanifest   # 200, application/manifest+json
+curl -sI https://baby.example.com/icon-192.png           # 200, image/png
+curl -sI https://baby.example.com/icon-512.png           # 200, image/png
 # sanity-check the icon is a real bitmap, not a placeholder (bytes should be multi-KB):
-curl -s https://baby.abiqum.com/icon-512.png | wc -c
+curl -s https://baby.example.com/icon-512.png | wc -c
 ```
 
 On an Android phone, load the site, sign in, and the in-app **Install** banner should

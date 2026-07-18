@@ -1123,20 +1123,20 @@ Run: `npm run build` then `npx vite preview` and load the app. In DevTools → A
 After deploying, from a machine run:
 
 ```bash
-curl -sI https://baby.abiqum.com/manifest.webmanifest
-curl -sI https://baby.abiqum.com/icon-192.png
-curl -sI https://baby.abiqum.com/icon-512.png
+curl -sI https://baby.example.com/manifest.webmanifest
+curl -sI https://baby.example.com/icon-192.png
+curl -sI https://baby.example.com/icon-512.png
 ```
 
 Expected: each returns `200` with a sensible `Content-Type` (`application/manifest+json` for the manifest). A 404 here is the usual reason Chrome never fires `beforeinstallprompt`.
 
 - [ ] **Step 3: Confirm installability on Android Chrome**
 
-On the phone, load `https://baby.abiqum.com`, sign in, and confirm the Install banner appears (or Chrome's menu shows "Install app"). Install and launch from the home screen; confirm it opens standalone.
+On the phone, load `https://baby.example.com`, sign in, and confirm the Install banner appears (or Chrome's menu shows "Install app"). Install and launch from the home screen; confirm it opens standalone.
 
 - [ ] **Step 4: Record any config fix**
 
-If step 2 shows a 404 (e.g. nginx not serving the hashed manifest or icons under `/`), add the fix to `deploy/nginx-baby.abiqum.com.conf` and note it in `deploy/DEPLOY.md`, then commit:
+If step 2 shows a 404 (e.g. nginx not serving the hashed manifest or icons under `/`), add the fix to `deploy/nginx-baby.example.com.conf` and note it in `deploy/DEPLOY.md`, then commit:
 
 ```bash
 git add deploy/

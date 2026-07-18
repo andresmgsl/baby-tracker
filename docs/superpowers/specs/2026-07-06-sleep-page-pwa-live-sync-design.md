@@ -114,7 +114,7 @@ look correct, but there is **no in-app install affordance** and nothing captures
   When already installed, it shows an "Installed" state.
 
 **Installability audit**: verify at deploy time that the built `manifest.webmanifest`
-and all icon files are actually reachable (HTTP 200) on `baby.abiqum.com`. A 404 on the
+and all icon files are actually reachable (HTTP 200) on `baby.example.com`. A 404 on the
 manifest or an icon is the usual reason Chrome never fires `beforeinstallprompt`; the
 repo config is correct, so this is a verification step, not an expected code change.
 
